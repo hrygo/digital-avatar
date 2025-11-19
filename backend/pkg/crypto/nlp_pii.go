@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // NLPPIIDetector 基于NLP技术的PII检测器
@@ -26,6 +28,13 @@ type NLPPIIDetector struct {
 
 	// 模式匹配器（作为后备）
 	patternMatchers map[string]*regexp.Regexp
+
+	// 性能优化字段
+	cacheEnabled    bool
+	entityCache     map[string]*CacheResult
+	cacheMutex      sync.RWMutex
+	perfStats       *PerformanceStats
+	poolRuneBuffer  sync.Pool
 }
 
 // PIIType PII类型枚举
@@ -51,6 +60,21 @@ type PIIEntity struct {
 	Replaced string  `json:"replaced,omitempty"`
 }
 
+// CacheResult 缓存结果
+type CacheResult struct {
+	processed string
+	entities  []PIIEntity
+	timestamp int64
+}
+
+// PerformanceStats 性能统计
+type PerformanceStats struct {
+	TotalRequests    int64
+	CacheHits        int64
+	AvgResponseTime  int64 // 纳秒
+	EntitiesDetected int64
+}
+
 // NewNLPPIIDetector 创建基于NLP的PII检测器
 func NewNLPPIIDetector() *NLPPIIDetector {
 	detector := &NLPPIIDetector{
@@ -58,10 +82,14 @@ func NewNLPPIIDetector() *NLPPIIDetector {
 		nameDictionary:  make(map[string]bool),
 		commonSurnames:  make(map[string]bool),
 		patternMatchers: make(map[string]*regexp.Regexp),
+		cacheEnabled:    true,
+		entityCache:     make(map[string]*CacheResult),
+		perfStats:       &PerformanceStats{},
 	}
 
 	detector.initDictionaries()
 	detector.initPatterns()
+	detector.initBufferPool()
 
 	return detector
 }
@@ -690,6 +718,185 @@ func (d *NLPPIIDetector) GetReplacementMap() map[string]string {
 		result[k] = v
 	}
 	return result
+}
+
+// initBufferPool 初始化缓冲池
+func (d *NLPPIIDetector) initBufferPool() {
+	d.poolRuneBuffer = sync.Pool{
+		New: func() interface{} {
+			return make([]rune, 0, 512)
+		},
+	}
+}
+
+// DetectAndReplaceFast 快速检测和替换版本
+func (d *NLPPIIDetector) DetectAndReplaceFast(text string, threshold float64) (string, []PIIEntity) {
+	start := time.Now()
+	defer func() {
+		// 更新性能统计
+		duration := time.Since(start).Nanoseconds()
+		atomic.AddInt64(&d.perfStats.TotalRequests, 1)
+
+		// 计算平均响应时间
+		oldAvg := atomic.LoadInt64(&d.perfStats.AvgResponseTime)
+		if oldAvg == 0 {
+			atomic.StoreInt64(&d.perfStats.AvgResponseTime, duration)
+		} else {
+			newAvg := (oldAvg + duration) / 2
+			atomic.StoreInt64(&d.perfStats.AvgResponseTime, newAvg)
+		}
+	}()
+
+	// 检查缓存
+	if d.cacheEnabled {
+		cacheKey := fmt.Sprintf("%.2f_%s", threshold, text)
+		if cached := d.getFromCache(cacheKey); cached != nil {
+			atomic.AddInt64(&d.perfStats.CacheHits, 1)
+			return cached.processed, cached.entities
+		}
+	}
+
+	// 使用缓冲池优化内存分配
+	runeBuffer := d.poolRuneBuffer.Get().([]rune)
+	defer d.poolRuneBuffer.Put(runeBuffer[:0])
+
+	// 重置缓冲区
+	runeBuffer = runeBuffer[:0]
+	runeBuffer = append(runeBuffer, []rune(text)...)
+
+	// 快速实体检测
+	entities := d.fastDetectEntities(text, threshold)
+
+	// 快速替换处理
+	result := text
+	for _, entity := range entities {
+		replacement := d.getReplacement(string(entity.Type), entity.Text)
+		result = result[:entity.StartPos] + replacement + result[entity.EndPos:]
+		entity.Replaced = replacement
+	}
+
+	// 缓存结果
+	if d.cacheEnabled {
+		d.addToCache(fmt.Sprintf("%.2f_%s", threshold, text), result, entities)
+	}
+
+	// 更新检测统计
+	atomic.AddInt64(&d.perfStats.EntitiesDetected, int64(len(entities)))
+
+	return result, entities
+}
+
+// fastDetectEntities 快速实体检测
+func (d *NLPPIIDetector) fastDetectEntities(text string, threshold float64) []PIIEntity {
+	var entities []PIIEntity
+
+	// 使用预编译的正则表达式进行快速模式匹配
+	// 电话号码检测
+	if matches := d.patternMatchers["phone"].FindAllStringSubmatchIndex(text, -1); len(matches) > 0 {
+		for _, match := range matches {
+			start, end := match[0], match[1]
+			entities = append(entities, PIIEntity{
+				Text:     text[start:end],
+				Type:     PIITypePhone,
+				StartPos: start,
+				EndPos:   end,
+				Score:    0.95,
+			})
+		}
+	}
+
+	// 邮箱检测
+	if matches := d.patternMatchers["email"].FindAllStringSubmatchIndex(text, -1); len(matches) > 0 {
+		for _, match := range matches {
+			start, end := match[0], match[1]
+			entities = append(entities, PIIEntity{
+				Text:     text[start:end],
+				Type:     PIITypeEmail,
+				StartPos: start,
+				EndPos:   end,
+				Score:    0.98,
+			})
+		}
+	}
+
+	// 身份证检测
+	if matches := d.patternMatchers["idcard"].FindAllStringSubmatchIndex(text, -1); len(matches) > 0 {
+		for _, match := range matches {
+			start, end := match[0], match[1]
+			original := text[start:end]
+			if d.isValidIDCard(original) {
+				score := 0.95
+				if len(original) == 18 {
+					score = 0.98
+				}
+				entities = append(entities, PIIEntity{
+					Text:     original,
+					Type:     PIITypeIDCard,
+					StartPos: start,
+					EndPos:   end,
+					Score:    score,
+				})
+			}
+		}
+	}
+
+	return entities
+}
+
+// getFromCache 从缓存获取结果
+func (d *NLPPIIDetector) getFromCache(key string) *CacheResult {
+	d.cacheMutex.RLock()
+	defer d.cacheMutex.RUnlock()
+
+	if entry, exists := d.entityCache[key]; exists {
+		// 简单的TTL检查：5分钟
+		if time.Now().Unix()-entry.timestamp < 300 {
+			return entry
+		}
+	}
+	return nil
+}
+
+// addToCache 添加结果到缓存
+func (d *NLPPIIDetector) addToCache(key string, processed string, entities []PIIEntity) {
+	d.cacheMutex.Lock()
+	defer d.cacheMutex.Unlock()
+
+	// 限制缓存大小
+	if len(d.entityCache) >= 10000 {
+		for k := range d.entityCache {
+			delete(d.entityCache, k)
+			break
+		}
+	}
+
+	d.entityCache[key] = &CacheResult{
+		processed: processed,
+		entities:  entities,
+		timestamp: time.Now().Unix(),
+	}
+}
+
+// GetPerformanceStats 获取性能统计
+func (d *NLPPIIDetector) GetPerformanceStats() *PerformanceStats {
+	return &PerformanceStats{
+		TotalRequests:    atomic.LoadInt64(&d.perfStats.TotalRequests),
+		CacheHits:        atomic.LoadInt64(&d.perfStats.CacheHits),
+		AvgResponseTime:  atomic.LoadInt64(&d.perfStats.AvgResponseTime),
+		EntitiesDetected: atomic.LoadInt64(&d.perfStats.EntitiesDetected),
+	}
+}
+
+// ClearCache 清空缓存
+func (d *NLPPIIDetector) ClearCache() {
+	d.cacheMutex.Lock()
+	defer d.cacheMutex.Unlock()
+	d.entityCache = make(map[string]*CacheResult)
+}
+
+// EnableCache 启用/禁用缓存
+func (d *NLPPIIDetector) EnableCache(enabled bool) {
+	d.cacheEnabled = enabled
 }
 
 // ToJSON 将检测结果转换为JSON

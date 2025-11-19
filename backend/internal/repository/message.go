@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -12,22 +13,131 @@ import (
 // MessageRepository 消息仓储
 type MessageRepository struct {
 	db *sql.DB
+
+	// 预编译语句 - v0.3.0性能优化
+	stmtCreateOrUpdate    *sql.Stmt
+	stmtGetByID          *sql.Stmt
+	stmtGetByMessageID   *sql.Stmt
+	stmtGetList          *sql.Stmt
+	stmtGetByTalker      *sql.Stmt
+	stmtGetRecent        *sql.Stmt
+	stmtSearch           *sql.Stmt
+	stmtGetTotalCount    *sql.Stmt
+	stmtGetCountByTalker *sql.Stmt
+	stmtDelete           *sql.Stmt
+	stmtDeleteBefore     *sql.Stmt
+	stmtGetTalkers       *sql.Stmt
 }
 
 // NewMessageRepository 创建消息仓储
 func NewMessageRepository(db *sql.DB) *MessageRepository {
-	return &MessageRepository{db: db}
+	repo := &MessageRepository{db: db}
+
+	// 初始化预编译语句
+	repo.initPreparedStatements()
+
+	return repo
 }
 
-// CreateOrUpdate 创建或更新消息
-func (r *MessageRepository) CreateOrUpdate(message *model.Message) error {
-	query := `
+// initPreparedStatements 初始化预编译语句
+func (r *MessageRepository) initPreparedStatements() {
+	var err error
+
+	// 准备预编译语句
+	r.stmtCreateOrUpdate, err = r.db.Prepare(`
 		INSERT OR REPLACE INTO messages (
 			message_id, talker_id, type, content, timestamp, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?)
-	`
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare create/update statement: %v", err))
+	}
 
-	_, err := r.db.Exec(query,
+	r.stmtGetByID, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages WHERE id = ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get by ID statement: %v", err))
+	}
+
+	r.stmtGetByMessageID, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages WHERE message_id = ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get by message ID statement: %v", err))
+	}
+
+	r.stmtGetList, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages ORDER BY timestamp DESC LIMIT ? OFFSET ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get list statement: %v", err))
+	}
+
+	r.stmtGetByTalker, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages WHERE talker_id = ? ORDER BY timestamp DESC LIMIT ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get by talker statement: %v", err))
+	}
+
+	r.stmtGetRecent, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages WHERE timestamp >= ? AND content != ''
+		ORDER BY timestamp DESC LIMIT ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get recent statement: %v", err))
+	}
+
+	r.stmtSearch, err = r.db.Prepare(`
+		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
+		FROM messages WHERE content LIKE ? ORDER BY timestamp DESC LIMIT ?
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare search statement: %v", err))
+	}
+
+	r.stmtGetTotalCount, err = r.db.Prepare("SELECT COUNT(*) FROM messages")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get total count statement: %v", err))
+	}
+
+	r.stmtGetCountByTalker, err = r.db.Prepare("SELECT COUNT(*) FROM messages WHERE talker_id = ?")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get count by talker statement: %v", err))
+	}
+
+	r.stmtDelete, err = r.db.Prepare("DELETE FROM messages WHERE id = ?")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare delete statement: %v", err))
+	}
+
+	r.stmtDeleteBefore, err = r.db.Prepare("DELETE FROM messages WHERE timestamp < ?")
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare delete before statement: %v", err))
+	}
+
+	r.stmtGetTalkers, err = r.db.Prepare(`
+		SELECT DISTINCT talker_id FROM messages ORDER BY talker_id
+	`)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to prepare get talkers statement: %v", err))
+	}
+}
+
+// CreateOrUpdate 创建或更新消息 - v0.3.0性能优化
+func (r *MessageRepository) CreateOrUpdate(ctx context.Context, message *model.Message) error {
+	start := time.Now()
+	defer func() {
+		r.trackPerformance(ctx, "CreateOrUpdate", start)
+	}()
+
+	_, err := r.stmtCreateOrUpdate.ExecContext(ctx,
 		message.MessageID,
 		message.TalkerID,
 		message.Type,
@@ -43,18 +153,26 @@ func (r *MessageRepository) CreateOrUpdate(message *model.Message) error {
 	return nil
 }
 
-// GetByID 根据ID获取消息
-func (r *MessageRepository) GetByID(id int64) (*model.Message, error) {
-	query := `
-		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
-		FROM messages
-		WHERE id = ?
-	`
+// trackPerformance 追踪查询性能
+func (r *MessageRepository) trackPerformance(ctx context.Context, operation string, start time.Time) {
+	duration := time.Since(start)
+	if duration > 50*time.Millisecond {
+		// 只记录慢查询
+		fmt.Printf("🐌 Slow %s operation: %v\n", operation, duration)
+	}
+}
 
-	row := r.db.QueryRow(query, id)
+// GetByID 根据ID获取消息 - v0.3.0性能优化
+func (r *MessageRepository) GetByID(ctx context.Context, id int64) (*model.Message, error) {
+	start := time.Now()
+	defer func() {
+		r.trackPerformance(ctx, "GetByID", start)
+	}()
+
+	row := r.stmtGetByID.QueryRowContext(ctx, id)
 	message := &model.Message{}
 
-		err := row.Scan(
+	err := row.Scan(
 		&message.ID,
 		&message.MessageID,
 		&message.TalkerID,
@@ -72,7 +190,7 @@ func (r *MessageRepository) GetByID(id int64) (*model.Message, error) {
 		return nil, fmt.Errorf("failed to get message: %w", err)
 	}
 
-		return message, nil
+	return message, nil
 }
 
 // GetByMessageID 根据消息ID获取消息
