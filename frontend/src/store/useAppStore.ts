@@ -12,6 +12,7 @@ import {
   AnalysisStatus,
   SystemSettings,
   SystemEvent,
+  ApiResponse,
 } from '../types';
 
 // 默认设置
@@ -93,8 +94,14 @@ export const useAppStore = create<AppStore>()(
           // 设置应用状态
           set({
             isInitialized: true,
-            settings: settingsResult.status === 'success' && settingsResult.data ? settingsResult.data : DEFAULT_SETTINGS,
-            weChatStatus: wechatStatusResult.status === 'success' && wechatStatusResult.data ? wechatStatusResult.data : null,
+            settings: settingsResult.status === 'success' && settingsResult.data &&
+                     typeof settingsResult.data === 'object' && 'auto_sync' in settingsResult.data
+                     ? settingsResult.data as SystemSettings
+                     : DEFAULT_SETTINGS,
+            weChatStatus: wechatStatusResult.status === 'success' && wechatStatusResult.data &&
+                        typeof wechatStatusResult.data === 'object' && 'is_connected' in wechatStatusResult.data
+                        ? wechatStatusResult.data as WeChatStatus
+                        : null,
             isLoading: false,
             error: null,
           });
@@ -127,9 +134,6 @@ export const useAppStore = create<AppStore>()(
       // 设置错误状态
       setError: (error) => set({ error }),
 
-      // 清除错误
-      clearError: () => set({ error: null }),
-
       // 更新刷新状态
       setRefreshState: (key, loading) =>
         set((state) => ({
@@ -155,13 +159,14 @@ export const useAppStore = create<AppStore>()(
       fetchWeChatStatus: async () => {
         try {
           const result = await api.getWeChatStatus();
-          if (result.status === 'success' && result.data) {
-            set({ weChatStatus: result.data });
+          if (result.status === 'success' && result.data &&
+              typeof result.data === 'object' && 'is_connected' in result.data) {
+            set({ weChatStatus: result.data as WeChatStatus });
           }
-          return result;
+          return result as ApiResponse<WeChatStatus>;
         } catch (error) {
           console.error('获取微信状态失败:', error);
-          throw error;
+          return { status: 'error', error: error instanceof Error ? error.message : '获取微信状态失败' } as ApiResponse<WeChatStatus>;
         }
       },
 
@@ -178,10 +183,10 @@ export const useAppStore = create<AppStore>()(
             await fetchWeChatStatus(); // 重新获取状态
           }
 
-          return result;
+          return result as ApiResponse<WeChatStatus>;
         } catch (error) {
           console.error('同步微信失败:', error);
-          throw error;
+          return { status: 'error', error: error instanceof Error ? error.message : '同步微信失败' } as ApiResponse<WeChatStatus>;
         } finally {
           setRefreshState('wechat', false);
         }

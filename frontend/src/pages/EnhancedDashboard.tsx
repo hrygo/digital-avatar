@@ -10,10 +10,12 @@ import {
   AlertCircle,
   Wifi,
   WifiOff,
-  Loader2
+  Loader2,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedMarkdownRenderer from '../components/EnhancedMarkdownRenderer';
+import WeChatDataManager from '../components/WeChatDataManager';
 import { useAppData } from '../hooks/useAppData';
 import clsx from 'clsx';
 
@@ -91,7 +93,7 @@ const NavigationItem: React.FC<{
 );
 
 const EnhancedDashboard: React.FC = () => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'briefing' | 'todos' | 'connections' | 'settings'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'briefing' | 'todos' | 'connections' | 'wechat' | 'settings'>('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const {
@@ -132,6 +134,11 @@ const EnhancedDashboard: React.FC = () => {
       label: '人脉雷达',
       icon: <Users />,
       count: strongConnectionsCount,
+    },
+    {
+      id: 'wechat',
+      label: '微信数据',
+      icon: <MessageSquare />,
     },
     {
       id: 'settings',
@@ -538,6 +545,17 @@ const EnhancedDashboard: React.FC = () => {
                       </motion.div>
                     ))}
                   </div>
+                </motion.div>
+              )}
+
+              {activeView === 'wechat' && (
+                <motion.div variants={itemVariants} className="space-y-6">
+                  <WeChatDataManager
+                    onStatusChange={(status) => {
+                      // 可以在这里更新全局状态或通知其他组件
+                      console.log('微信状态更新:', status);
+                    }}
+                  />
                 </motion.div>
               )}
 
