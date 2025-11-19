@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse } from '../types';
+import { ApiResponse, Briefing, TodoList, ConnectionList, WeChatStatus, AnalysisStatus } from '../types';
 
 // API基础配置
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:1234';
@@ -74,29 +74,29 @@ export const api = {
   },
 
   // 微信相关API
-  async getWeChatStatus() {
-    return request('GET', '/api/v1/wechat/status');
+  async getWeChatStatus(): Promise<ApiResponse<WeChatStatus>> {
+    return request<WeChatStatus>('GET', '/api/v1/wechat/status');
   },
 
   async connectWeChat() {
     return request('POST', '/api/v1/wechat/connect');
   },
 
-  async syncWeChat() {
-    return request('POST', '/api/v1/wechat/sync');
+  async syncWeChat(): Promise<ApiResponse<WeChatStatus>> {
+    return request<WeChatStatus>('POST', '/api/v1/wechat/sync');
   },
 
   // 分析相关API
-  async generateBriefing() {
-    return request('POST', '/api/v1/analysis/briefing');
+  async generateBriefing(): Promise<ApiResponse<Briefing>> {
+    return request<Briefing>('POST', '/api/v1/analysis/briefing');
   },
 
-  async extractTodos() {
-    return request('POST', '/api/v1/analysis/todos');
+  async extractTodos(): Promise<ApiResponse<TodoList>> {
+    return request<TodoList>('POST', '/api/v1/analysis/todos');
   },
 
-  async analyzeConnections() {
-    return request('POST', '/api/v1/analysis/connections');
+  async analyzeConnections(): Promise<ApiResponse<ConnectionList>> {
+    return request<ConnectionList>('POST', '/api/v1/analysis/connections');
   },
 
   async analyzeMessage(messageId: string) {
@@ -130,8 +130,8 @@ export const api = {
     return request('POST', '/api/v1/analysis/batch', { message_ids: messageIds });
   },
 
-  async getAnalysisStatus() {
-    return request('GET', '/api/v1/analysis/status');
+  async getAnalysisStatus(): Promise<ApiResponse<AnalysisStatus>> {
+    return request<AnalysisStatus>('GET', '/api/v1/analysis/status');
   },
 
   async configureAnalysis(config: {

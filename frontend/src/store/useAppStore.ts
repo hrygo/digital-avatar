@@ -321,7 +321,6 @@ export const useAppStore = create<AppStore>()(
         try {
           const results = await Promise.allSettled(promises);
           console.log('🔄 全部数据刷新完成', results);
-          return results;
         } catch (error) {
           console.error('刷新数据失败:', error);
           throw error;
@@ -330,7 +329,7 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'twinos-store',
-      partialize: (state) => ({
+      partialize: (state: AppState) => ({
         settings: state.settings,
         activeView: state.activeView,
         sidebarCollapsed: state.sidebarCollapsed,
