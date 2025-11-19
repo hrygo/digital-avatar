@@ -270,12 +270,27 @@ func setupRouter(cfg *config.Config, h *handler.Handler, cacheMgr *cache.CacheMa
 	// API 路由组
 	api := r.Group("/api/v1")
 	{
-		// 微信数据相关
+		// 微信数据相关 v0.4.0 - 完整API
 		api.POST("/wechat/connect", h.WeChat.Connect)
-
-		// 缓存状态查询 - 短期缓存
-		api.GET("/wechat/status", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.Status)
 		api.POST("/wechat/sync", h.WeChat.Sync)
+
+		// 微信状态和数据查询 - 缓存状态查询
+		api.GET("/wechat/status", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.Status)
+
+		// 微信数据CRUD操作 - 缓存数据查询
+		api.GET("/wechat/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetMessages)
+		api.GET("/wechat/contacts", cache.CacheMiddleware(apiCache, longCacheConfig), h.WeChat.GetContacts)
+		api.GET("/wechat/chats", cache.CacheMiddleware(apiCache, longCacheConfig), h.WeChat.GetChats)
+		api.GET("/wechat/sync-records", h.WeChat.GetSyncRecords)
+
+		// 微信搜索功能 - 不缓存实时搜索
+		api.GET("/wechat/search", h.WeChat.SearchMessages)
+
+		// 微信统计信息 - 短期缓存统计数据
+		api.GET("/wechat/statistics", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetStatistics)
+
+		// 聊天详情 - 缓存聊天消息
+		api.GET("/wechat/chats/:chat_id/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetChatMessages)
 
 		// 数据分析相关 (不缓存 - 这些是计算密集型操作，结果应该实时)
 		api.POST("/analysis/briefing", h.Analysis.GenerateBriefing)

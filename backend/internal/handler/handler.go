@@ -6,7 +6,7 @@ import (
 
 // Handler 处理器聚合
 type Handler struct {
-	WeChat           *WeChatHandler
+	WeChat           *WeChatHandlerV2
 	Analysis         *AnalysisHandler
 	EnhancedAnalysis *EnhancedAnalysisHandler
 	Data             *DataHandler
@@ -17,7 +17,7 @@ type Handler struct {
 // New 创建处理器聚合
 func New(services *service.Service) *Handler {
 	return &Handler{
-		WeChat:           NewWeChatHandler(services.WeChat),
+		WeChat:           NewWeChatHandlerV2(services.WeChat),
 		Analysis:         NewAnalysisHandler(services.Analysis),
 		EnhancedAnalysis: NewEnhancedAnalysisHandler(services.EnhancedAnalysis),
 		Data:             NewDataHandler(services.Data),

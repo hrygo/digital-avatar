@@ -3,11 +3,12 @@ package service
 import (
 	"twin-os/backend/internal/config"
 	"twin-os/backend/internal/repository"
+	"twin-os/backend/internal/services"
 )
 
 // Service 服务聚合
 type Service struct {
-	WeChat           *WeChatService
+	WeChat           *services.WeChatServiceV2
 	Analysis         *AnalysisService
 	EnhancedAnalysis *EnhancedAnalysisService
 	Data             *DataService
@@ -18,7 +19,7 @@ type Service struct {
 // New 创建服务聚合
 func New(cfg *config.Config, repo *repository.Repository) *Service {
 	return &Service{
-		WeChat:           NewWeChatService(cfg, repo),
+		WeChat:           services.NewWeChatServiceV2(repo.GetDB()),
 		Analysis:         NewAnalysisService(cfg, repo),
 		EnhancedAnalysis: NewEnhancedAnalysisService(cfg, repo),
 		Data:             NewDataService(cfg, repo),
