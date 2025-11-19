@@ -1,0 +1,67 @@
+# 编译输出
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go 编译产物
+*.test
+*.prof
+
+# 依赖目录
+vendor/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+*.log
+logs/
+
+# 临时文件
+tmp/
+temp/
+
+# 配置文件（包含敏感信息）
+config.local.*
+.env
+.env.local
+
+# 数据文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 备份文件
+backups/*.bak
+backups/*.tar.gz
+
+# 测试覆盖率文件（保留在docs目录中）
+coverage.out
+coverage.html
+
+# 文档构建产物
+docs/_build/
+docs/.doctrees/
+
+# 证书文件
+*.pem
+*.key
+*.crt
+
+# 编译缓存
+*.cache
