@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -18,8 +19,8 @@ func NewContactRepository(db *sql.DB) *ContactRepository {
 	return &ContactRepository{db: db}
 }
 
-// CreateOrUpdate 创建或更新联系人
-func (r *ContactRepository) CreateOrUpdate(contact *model.Contact) error {
+// CreateOrUpdate 创建或更新联系人 - v0.3.0性能优化
+func (r *ContactRepository) CreateOrUpdate(ctx context.Context, contact *model.Contact) error {
 	query := `
 		INSERT OR REPLACE INTO contacts (
 			user_name, nick_name, remark, type, updated_at

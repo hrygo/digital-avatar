@@ -61,7 +61,7 @@ func (h *WeChatHandler) Status(c *gin.Context) {
 
 // Sync 同步数据
 func (h *WeChatHandler) Sync(c *gin.Context) {
-	result, err := h.service.SyncMessages()
+	result, err := h.service.SyncMessages(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to sync: " + err.Error(),

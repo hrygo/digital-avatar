@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -102,7 +103,7 @@ func (s *WeChatService) GetStatus() (*WeChatStatus, error) {
 }
 
 // SyncMessages 同步消息
-func (s *WeChatService) SyncMessages() (*SyncResult, error) {
+func (s *WeChatService) SyncMessages(ctx context.Context) (*SyncResult, error) {
 	if s.reader == nil || !s.reader.IsOpened() {
 		return nil, fmt.Errorf("wechat database not connected")
 	}
@@ -157,7 +158,7 @@ func (s *WeChatService) SyncMessages() (*SyncResult, error) {
 		}
 
 		// 保存到数据库
-		if err := s.repository.Message.CreateOrUpdate(msg); err != nil {
+		if err := s.repository.Message.CreateOrUpdate(ctx, msg); err != nil {
 			logger.Warn("⚠️ Failed to save message " + msg.MessageID + ": " + err.Error())
 			result.Errors++
 		} else {
@@ -166,7 +167,7 @@ func (s *WeChatService) SyncMessages() (*SyncResult, error) {
 	}
 
 	// 同步联系人
-	if err := s.syncContacts(); err != nil {
+	if err := s.syncContacts(ctx); err != nil {
 		logger.Warn("⚠️ Failed to sync contacts: " + err.Error())
 		result.Errors++
 	}
@@ -188,14 +189,14 @@ func (s *WeChatService) SyncMessages() (*SyncResult, error) {
 }
 
 // syncContacts 同步联系人
-func (s *WeChatService) syncContacts() error {
+func (s *WeChatService) syncContacts(ctx context.Context) error {
 	contacts, err := s.reader.GetContacts()
 	if err != nil {
 		return fmt.Errorf("failed to read contacts: %w", err)
 	}
 
 	for _, contact := range contacts {
-		if err := s.repository.Contact.CreateOrUpdate(contact); err != nil {
+		if err := s.repository.Contact.CreateOrUpdate(ctx, contact); err != nil {
 			logger.Warn("⚠️ Failed to save contact " + contact.UserName + ": " + err.Error())
 		}
 	}
