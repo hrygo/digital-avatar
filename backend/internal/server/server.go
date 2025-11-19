@@ -153,6 +153,17 @@ func setupRouter(cfg *config.Config, h *handler.Handler, cacheMgr *cache.CacheMa
 		api.POST("/analysis/todos", h.Analysis.ExtractTodos)
 		api.POST("/analysis/connections", h.Analysis.AnalyzeConnections)
 
+		// 增强AI分析相关 (不缓存 - 实时AI计算)
+		api.POST("/analysis/message", h.EnhancedAnalysis.AnalyzeMessage)
+		api.GET("/analysis/conversation", h.EnhancedAnalysis.AnalyzeConversation)
+		api.GET("/analysis/emotion/trend", h.EnhancedAnalysis.GetEmotionTrend)
+		api.GET("/analysis/topics", h.EnhancedAnalysis.GetTopicAnalysis)
+		api.GET("/analysis/intents", h.EnhancedAnalysis.GetIntentDistribution)
+		api.GET("/analysis/summary", h.EnhancedAnalysis.GetConversationSummary)
+		api.POST("/analysis/batch", h.EnhancedAnalysis.BatchAnalyzeMessages)
+		api.GET("/analysis/status", h.EnhancedAnalysis.GetAnalysisStatus)
+		api.PUT("/analysis/config", h.EnhancedAnalysis.ConfigureAnalysis)
+
 		// 用户数据相关 - 缓存数据查询
 		api.GET("/data/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.Data.GetMessages)
 		api.GET("/data/contacts", cache.CacheMiddleware(apiCache, longCacheConfig), h.Data.GetContacts)

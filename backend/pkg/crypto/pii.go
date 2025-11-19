@@ -60,6 +60,11 @@ func (d *PIIDetector) initPatterns() {
 		regexp.MustCompile(`\d{15}`),       // 15位身份证
 	)
 
+	// 地址模式 (简化版)
+	d.addressPatterns = append(d.addressPatterns,
+		regexp.MustCompile(`[\p{Han}]+(?:省|自治区|市|区|县|镇|乡|街道|路|道|巷|弄|号|楼|室)[\p{Han}0-9\-]+`),
+	)
+
 	// 公司名模式（简化版）
 	d.companyPatterns = append(d.companyPatterns,
 		regexp.MustCompile(`[\p{Han}]+(?:有限公司|股份有限公司|集团|科技|网络|信息|文化|教育|医疗|金融|投资)`),
@@ -119,6 +124,9 @@ func (d *PIIDetector) collectAllDetections(text string) []PIIDetection {
 
 	// 收集身份证检测结果
 	allDetections = append(allDetections, d.collectIDCardDetections(text)...)
+
+	// 收集地址检测结果
+	allDetections = append(allDetections, d.collectAddressDetections(text)...)
 
 	// 收集公司名检测结果
 	allDetections = append(allDetections, d.collectCompanyDetections(text)...)
@@ -251,6 +259,39 @@ func (d *PIIDetector) collectIDCardDetections(text string) []PIIDetection {
 	return detections
 }
 
+// collectAddressDetections 收集地址检测结果
+func (d *PIIDetector) collectAddressDetections(text string) []PIIDetection {
+	detections := make([]PIIDetection, 0)
+	for _, pattern := range d.addressPatterns {
+		matches := pattern.FindAllStringSubmatchIndex(text, -1)
+		for _, match := range matches {
+			if len(match) >= 2 {
+				start, end := match[0], match[1]
+				if start >= 0 && end <= len(text) && start < end {
+					original := text[start:end]
+
+					// 简单的长度过滤，避免匹配到太短的词
+					runes := []rune(original)
+					if len(runes) < 4 {
+						continue
+					}
+
+					detection := PIIDetection{
+						Type:      "address",
+						Original:  original,
+						Replaced:  "", // 将在主函数中填充
+						StartPos:  start,
+						EndPos:    end,
+						Confidence: 0.6, // 地址正则比较难精确，置信度适中
+					}
+					detections = append(detections, detection)
+				}
+			}
+		}
+	}
+	return detections
+}
+
 // collectCompanyDetections 收集公司名检测结果
 func (d *PIIDetector) collectCompanyDetections(text string) []PIIDetection {
 	detections := make([]PIIDetection, 0)
@@ -373,6 +414,8 @@ func (d *PIIDetector) getReplacement(piiType, original string) string {
 		replacement = "[邮箱地址]"
 	case "idcard":
 		replacement = "[身份证号]"
+	case "address":
+		replacement = "[地址]"
 	case "company":
 		replacement = fmt.Sprintf("[公司%d]", len(d.replacementMap)+1)
 	default:

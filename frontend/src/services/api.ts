@@ -40,11 +40,15 @@ export interface BriefingResult {
 export interface TodoItem {
   title: string;
   description: string;
-  priority: string;
+  priority: 'high' | 'medium' | 'low';
   deadline: string;
   related_people: string[];
   source_message_id: string;
   created_at: string;
+  action_type: string;
+  estimated_duration: string;
+  confidence: number;
+  tags: string[];
 }
 
 export interface TodoResult {
@@ -56,12 +60,19 @@ export interface TodoResult {
 
 export interface ConnectionAnalysis {
   person: string;
+  relationship_type: string;
+  interaction_pattern: string;
   action: string;
   context: string;
-  importance: string;
+  importance: 'high' | 'medium' | 'low';
   sentiment: string;
   message_count: number;
-  last_mention: string;
+  last_interaction: string;
+  opportunity_score: number;
+  risk_level: string;
+  relationship_strength: string;
+  suggested_action: string;
+  topics: string[];
 }
 
 export interface ConnectionResult {

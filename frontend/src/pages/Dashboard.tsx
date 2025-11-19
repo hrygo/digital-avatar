@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { Brain, Users, CheckSquare, Activity, Database, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { LoadingSpinner, LoadingCard, FullScreenLoader } from '../components/LoadingSpinner';
+import TodoCard from '../components/TodoCard';
+import ConnectionCard from '../components/ConnectionCard';
 
 const Dashboard: React.FC = () => {
   const {
@@ -718,62 +720,15 @@ const Dashboard: React.FC = () => {
                         lines={4}
                       />
                     ) : todos && todos.todos.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
                         {todos.todos.map((todo, index) => (
-                          <motion.div
+                           <motion.div
                             key={index}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            whileHover={{ scale: 1.02, x: 10 }}
-                            transition={{ delay: index * 0.1 }}
-                            className="glass-card rounded-2xl p-6 border-l-4 hover:border-l-8 transition-all duration-300"
-                            style={{
-                              borderLeftColor: todo.priority === 'high' ? '#ef4444' :
-                                             todo.priority === 'medium' ? '#eab308' : '#22c55e'
-                            }}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
                           >
-                            <div className="flex items-start space-x-4">
-                              <motion.div
-                                whileHover={{ rotate: 15, scale: 1.2 }}
-                                className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-emerald-600/20 rounded-xl flex items-center justify-center mt-1"
-                              >
-                                <CheckSquare className="w-6 h-6 text-green-400" />
-                              </motion.div>
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-3">
-                                  <h3 className="text-xl font-semibold text-white">{todo.title}</h3>
-                                  <motion.span
-                                    whileHover={{ scale: 1.1 }}
-                                    className={`px-3 py-1 rounded-full text-xs font-bold shadow-lg ${
-                                      todo.priority === 'high'
-                                        ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white glow-red'
-                                        : todo.priority === 'medium'
-                                        ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white'
-                                        : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white glow-green'
-                                    }`}
-                                  >
-                                    {todo.priority === 'high' ? '🔥 高优先级' :
-                                     todo.priority === 'medium' ? '⚡ 中优先级' : '✓ 低优先级'}
-                                  </motion.span>
-                                </div>
-                                <p className="text-gray-300 mb-4 leading-relaxed">{todo.description}</p>
-                                <div className="flex items-center justify-between">
-                                  {todo.deadline && (
-                                    <div className="flex items-center space-x-2 text-sm text-gray-400">
-                                      <span>⏰</span>
-                                      <span>截止: {todo.deadline}</span>
-                                    </div>
-                                  )}
-                                  <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="text-sm text-blue-400 hover:text-blue-300 font-medium"
-                                  >
-                                    查看详情 →
-                                  </motion.button>
-                                </div>
-                              </div>
-                            </div>
+                            <TodoCard todo={todo} />
                           </motion.div>
                         ))}
                       </div>
@@ -845,40 +800,15 @@ const Dashboard: React.FC = () => {
                         lines={3}
                       />
                     ) : connections && connections.connections.length > 0 ? (
-                      <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                         {connections.connections.map((connection, index) => (
                           <motion.div
                             key={index}
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: index * 0.1 }}
-                            className="glass rounded-xl p-6"
                           >
-                            <div className="flex items-center space-x-3 mb-4">
-                              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
-                                <Users className="w-6 h-6 text-purple-400" />
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-medium">{connection.person}</h3>
-                                <p className="text-sm text-gray-400">{connection.action}</p>
-                              </div>
-                            </div>
-                            <p className="text-gray-300 mb-3">{connection.context}</p>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className={`px-2 py-1 rounded ${
-                                connection.importance === 'high'
-                                  ? 'bg-red-500/20 text-red-400'
-                                  : connection.importance === 'medium'
-                                  ? 'bg-yellow-500/20 text-yellow-400'
-                                  : 'bg-green-500/20 text-green-400'
-                              }`}>
-                                {connection.importance === 'high' ? '重要' :
-                                 connection.importance === 'medium' ? '一般' : '普通'}
-                              </span>
-                              <span className="text-gray-400">
-                                {connection.message_count} 次提及
-                              </span>
-                            </div>
+                            <ConnectionCard connection={connection} />
                           </motion.div>
                         ))}
                       </div>

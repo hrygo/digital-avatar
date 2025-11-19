@@ -58,7 +58,8 @@ func (s *AnalysisService) GenerateBriefing() (*BriefingResult, error) {
 	var messageTexts []string
 	for _, msg := range messages {
 		if msg.Content != "" {
-			messageTexts = append(messageTexts, s.restorePII(msg.Content))
+			maskedContent, _ := s.maskPII(msg.Content)
+			messageTexts = append(messageTexts, maskedContent)
 		}
 	}
 
@@ -122,7 +123,8 @@ func (s *AnalysisService) ExtractTodos() (*TodoResult, error) {
 	messageMap := make(map[string]*model.Message)
 	for _, msg := range messages {
 		if msg.Content != "" {
-			messageTexts = append(messageTexts, s.restorePII(msg.Content))
+			maskedContent, _ := s.maskPII(msg.Content)
+			messageTexts = append(messageTexts, maskedContent)
 			messageMap[msg.MessageID] = msg
 		}
 	}
@@ -206,7 +208,8 @@ func (s *AnalysisService) AnalyzeConnections() (*ConnectionResult, error) {
 	var messageTexts []string
 	for _, msg := range messages {
 		if msg.Content != "" {
-			messageTexts = append(messageTexts, s.restorePII(msg.Content))
+			maskedContent, _ := s.maskPII(msg.Content)
+			messageTexts = append(messageTexts, maskedContent)
 		}
 	}
 
@@ -249,11 +252,9 @@ func (s *AnalysisService) AnalyzeConnections() (*ConnectionResult, error) {
 	return result, nil
 }
 
-// restorePII 恢复PII信息（用于AI分析）
-func (s *AnalysisService) restorePII(text string) string {
-	// 这里应该实现PII恢复逻辑
-	// 暂时返回原文本
-	return text
+// maskPII 对文本进行PII脱敏
+func (s *AnalysisService) maskPII(text string) (string, crypto.PIIReport) {
+	return s.detector.DetectAndReplace(text)
 }
 
 // extractMessageIDs 提取消息ID列表
