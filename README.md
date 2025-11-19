@@ -1,13 +1,13 @@
-# TwinOS - 智能决策副驾系统
+# Digital Avatar - 智能决策副驾系统
 
 <div align="center">
 
-![TwinOS Logo](https://via.placeholder.com/200x80/000000/FFFFFF?text=TwinOS)
+![Digital Avatar Logo](https://via.placeholder.com/200x80/000000/FFFFFF?text=Digital+Avatar)
 
 [![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://golang.org)
 [![React Version](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)](https://reactjs.org)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)](https://github.com/your-username/twin-os/actions)
+[![Version](https://img.shields.io/badge/Version-0.1.0-orange?style=flat-square)](https://github.com/your-username/digital-avatar/releases/tag/v0.1.0)
 
 **你就负责思考，剩下的交给它**
 
@@ -17,7 +17,9 @@
 
 ## 📖 项目简介
 
-TwinOS是一个基于人工智能的智能决策副驾系统，专为提升个人和团队决策效率而设计。系统结合了深度学习、自然语言处理和知识图谱技术，为用户提供智能化的数据分析、决策支持和知识管理服务。
+Digital Avatar是一个基于人工智能的智能决策副驾系统，专为提升个人和团队决策效率而设计。系统结合了深度学习、自然语言处理和知识图谱技术，为用户提供智能化的数据分析、决策支持和知识管理服务。
+
+**🚀 当前版本 (0.1.0) 是最小可用产品 (MVP)**，包含核心功能的基础实现，为后续版本发展奠定基础。
 
 ### 🎯 核心理念
 
@@ -28,29 +30,25 @@ TwinOS是一个基于人工智能的智能决策副驾系统，专为提升个�
 
 ## ✨ 功能特性
 
-### 🧠 智能分析引擎
-- **深度洞察**: 基于聊天记录的智能分析
-- **待办提取**: 自动识别和整理任务清单
-- **关系图谱**: 构建人脉关系和社交网络
-- **情感分析**: 理解对话情绪和语调
+### 🧠 MVP核心功能 (v0.1.0)
+- **基础智能分析**: 集成DeepSeek API进行聊天记录分析
+- **待办事项提取**: 自动识别和整理任务清单
+- **人脉关系识别**: 基础的社交网络分析
+- **个人简报生成**: 生成简单的个人洞察报告
 
-### 💾 数据管理系统
-- **微信集成**: 安全连接和同步微信数据
-- **多源支持**: 支持多种数据源导入
-- **实时同步**: 增量同步，保持数据最新
-- **隐私保护**: PII自动脱敏，保护敏感信息
+### 💾 数据管理
+- **微信数据导入**: 支持微信聊天记录导入功能
+- **基础数据存储**: SQLite数据库存储和管理
+- **PII信息脱敏**: 基础的敏感信息自动脱敏
+- **数据备份恢复**: 基础的数据备份和恢复功能
 
-### 🛡️ 企业级安全
-- **端到端加密**: 军用级数据加密
-- **备份恢复**: 自动备份，一键恢复
-- **访问控制**: 细粒度权限管理
-- **审计日志**: 完整的操作记录追踪
+### 🏗️ 技术架构
+- **Go后端**: 基于Gin框架的高性能后端服务
+- **React前端**: 现代化的Web用户界面
+- **AI引擎**: DeepSeek API基础集成
+- **容器化**: 基础的Docker支持
 
-### 🚀 高性能架构
-- **微服务设计**: 松耦合，高可扩展性
-- **智能缓存**: 多层缓存优化性能
-- **容器化部署**: Docker/Kubernetes支持
-- **监控告警**: 实时性能监控
+> 📝 **注意**: 当前为MVP版本，功能相对基础。更多高级功能将在后续版本中逐步添加。
 
 ## 🏗️ 技术架构
 
@@ -87,8 +85,8 @@ TwinOS是一个基于人工智能的智能决策副驾系统，专为提升个�
 
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/twin-os.git
-cd twin-os
+git clone https://github.com/your-username/digital-avatar.git
+cd digital-avatar
 
 # 初始化开发环境
 make init
@@ -104,8 +102,8 @@ make dev
 
 #### 1. 克隆项目
 ```bash
-git clone https://github.com/your-username/twin-os.git
-cd twin-os
+git clone https://github.com/your-username/digital-avatar.git
+cd digital-avatar
 ```
 
 #### 2. 安装依赖
@@ -196,7 +194,7 @@ npm start
 ### 项目结构
 
 ```
-twin-os/
+digital-avatar/
 ├── backend/              # Go后端服务
 │   ├── internal/        # 内部包
 │   ├── pkg/            # 公共包
@@ -207,10 +205,16 @@ twin-os/
 │   ├── public/        # 静态资源
 │   └── package.json   # Node.js依赖
 ├── docs/              # 项目文档
+│   ├── product/       # 产品文档
+│   └── project/       # 项目管理文档
 ├── scripts/           # 构建脚本
 ├── build/             # 构建输出
-├── dist/              # 发布文件
+├── .github/           # GitHub配置
+├── Dockerfile         # 容器配置
+├── docker-compose.yml # 容器编排
 ├── Makefile           # 构建命令
+├── CHANGELOG.md       # 变更日志
+├── LICENSE            # MIT许可证
 └── README.md          # 项目说明
 ```
 
@@ -290,8 +294,8 @@ curl -fsSL https://get.docker.com | sh
 pip install docker-compose
 
 # 克隆项目
-git clone https://github.com/your-username/twin-os.git
-cd twin-os
+git clone https://github.com/your-username/digital-avatar.git
+cd digital-avatar
 ```
 
 #### 3. 配置文件
@@ -342,37 +346,48 @@ MAX_BACKUP_FILES=10
 
 ## 🤝 社区支持
 
-- **GitHub Issues**: [报告问题](https://github.com/your-username/twin-os/issues)
-- **GitHub Discussions**: [社区讨论](https://github.com/your-username/twin-os/discussions)
-- **Wiki**: [详细文档](https://github.com/your-username/twin-os/wiki)
+- **GitHub Issues**: [报告问题](https://github.com/your-username/digital-avatar/issues)
+- **GitHub Discussions**: [社区讨论](https://github.com/your-username/digital-avatar/discussions)
+- **Wiki**: [详细文档](https://github.com/your-username/digital-avatar/wiki)
 
 ## 📊 项目状态
 
-### 开发进度
+### 开发进度 (MVP v0.1.0)
 
-- [x] 核心架构设计
-- [x] 用户认证系统
-- [x] 数据同步引擎
-- [x] AI分析模块
-- [x] 备份恢复系统
-- [x] Web用户界面
+- [x] 基础架构设计
+- [x] Go后端服务框架
+- [x] React前端界面
+- [x] DeepSeek API集成
+- [x] 基础数据存储
+- [x] 微信数据导入
+- [x] 简单AI分析功能
+- [x] 基础备份功能
+- [ ] 高级AI分析
 - [ ] 移动端应用
 - [ ] 插件系统
 - [ ] 企业版功能
 
-### 路线图
+### 版本路线图
 
-#### v1.0 (当前版本)
-- ✅ 基础功能实现
-- ✅ Web应用发布
-- ✅ Docker支持
+#### v0.1.0 (当前MVP版本)
+- ✅ 核心功能MVP实现
+- ✅ 基础Web应用发布
+- ✅ Docker基础支持
+- ✅ DeepSeek AI集成
 
-#### v1.1 (计划中)
-- 🔄 移动端适配
-- 🔄 更多AI模型支持
-- 🔄 团队协作功能
+#### v0.2.0 (计划中)
+- 🔄 增强AI分析能力
+- 🔄 更多数据源支持
+- 🔄 改进用户界面
+- 🔄 性能优化
 
-#### v2.0 (未来版本)
+#### v0.3.0 (规划中)
+- 📋 移动端适配
+- 📋 更多AI模型选择
+- 📋 团队基础功能
+
+#### v1.0.0 (未来目标)
+- 📋 完整产品功能
 - 📋 插件生态系统
 - 📋 企业级功能
 - 📋 云端部署版本
@@ -394,8 +409,8 @@ MAX_BACKUP_FILES=10
 
 <div align="center">
 
-**[⬆ 回到顶部](#twinos---智能决策副驾系统)**
+**[⬆ 回到顶部](#digital-avatar---智能决策副驾系统)**
 
-Made with ❤️ by the TwinOS Team
+Made with ❤️ by the Digital Avatar Team
 
 </div>
