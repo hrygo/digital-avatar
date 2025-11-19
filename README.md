@@ -411,6 +411,6 @@ MAX_BACKUP_FILES=10
 
 **[⬆ 回到顶部](#digital-avatar---智能决策副驾系统)**
 
-Made with ❤️ by the Digital Avatar Team
+Made with ❤️ by Digital Avatar Team (大鸿 & 宫蕴)
 
 </div>
