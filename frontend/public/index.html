@@ -1,120 +1,214 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#000000" />
-  <meta name="description" content="TwinOS - 智能决策副驾系统" />
-  <title>TwinOS - 你就负责思考，剩下的交给它</title>
-  <style>
-    /* Loading screen styles */
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
-      background-color: #000000;
-      color: #ffffff;
-    }
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="TwinOS - 智能决策副驾系统" />
+    <meta name="keywords" content="AI,智能决策,副驾,数据分析,商业智能" />
+    <meta name="author" content="TwinOS Team" />
 
-    #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: #000000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="%PUBLIC_URL%" />
+    <meta property="og:title" content="TwinOS - 智能决策副驾系统" />
+    <meta property="og:description" content="你就负责思考，剩下的交给它" />
+    <meta property="og:image" content="%PUBLIC_URL%/og-image.png" />
 
-    .loading-logo {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 2rem;
-      letter-spacing: 0.1em;
-    }
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="%PUBLIC_URL%" />
+    <meta property="twitter:title" content="TwinOS - 智能决策副驾系统" />
+    <meta property="twitter:description" content="你就负责思考，剩下的交给它" />
+    <meta property="twitter:image" content="%PUBLIC_URL%/twitter-image.png" />
 
-    .loading-text {
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      color: #00ff00;
-      margin-bottom: 0.5rem;
-      min-height: 1.2rem;
-    }
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="TwinOS" />
 
-    .loading-cursor {
-      display: inline-block;
-      width: 0.6em;
-      height: 1.2em;
-      background-color: #00ff00;
-      animation: blink 1s infinite;
-    }
+    <!-- Android Chrome -->
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
 
-    @keyframes blink {
-      0%, 50% { opacity: 1; }
-      51%, 100% { opacity: 0; }
-    }
+    <!-- Microsoft Edge -->
+    <meta name="msapplication-TileColor" content="#000000" />
+    <meta name="msapplication-config" content="%PUBLIC_URL%/browserconfig.xml" />
 
-    #root {
-      height: 100vh;
-      overflow: hidden;
-    }
-  </style>
+    <!-- PWA -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <title>TwinOS - 智能决策副驾系统</title>
+
+    <style>
+        /* Loading screen styles */
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .loading-text {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+            color: #00ff00;
+            margin-bottom: 0.5rem;
+            min-height: 1.2rem;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .loading-cursor {
+            display: inline-block;
+            width: 0.6em;
+            height: 1.2em;
+            background-color: #00ff00;
+            animation: blink 1s infinite;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        #root {
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Prevent scrollbars during loading */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </head>
 <body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #000;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            flex-direction: column;
+            text-align: center;
+            padding: 2rem;
+        ">
+            <h1 style="font-size: 2rem; margin-bottom: 1rem;">TwinOS</h1>
+            <p>需要启用 JavaScript 才能运行此应用程序。</p>
+        </div>
+    </noscript>
 
-  <!-- Loading Screen -->
-  <div id="loading-screen">
-    <div class="loading-logo">TWINOS</div>
-    <div class="loading-text">System initialization in progress<span class="loading-cursor"></span></div>
-  </div>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="loading-logo">TWINOS</div>
+        <div class="loading-text">System initialization in progress<span class="loading-cursor"></span></div>
+    </div>
 
-  <div id="root"></div>
+    <!-- React App Container -->
+    <div id="root"></div>
 
-  <script>
-    // Simulate loading animation
-    const loadingTexts = [
-      'System initialization in progress',
-      'Establishing secure connection',
-      'Loading neural network parameters',
-      'Calibrating decision matrix',
-      'Syncing with memory banks',
-      'System ready'
-    ];
+    <script>
+        // Simulate loading animation
+        const loadingTexts = [
+            'System initialization in progress',
+            'Establishing secure connection',
+            'Loading neural network parameters',
+            'Calibrating decision matrix',
+            'Syncing with memory banks',
+            'Connecting to AI engines',
+            'Preparing analysis modules',
+            'System ready'
+        ];
 
-    let textIndex = 0;
-    const loadingTextElement = document.querySelector('.loading-text');
+        let textIndex = 0;
+        const loadingTextElement = document.querySelector('.loading-text');
 
-    function updateLoadingText() {
-      if (loadingTextElement && textIndex < loadingTexts.length) {
-        loadingTextElement.innerHTML = loadingTexts[textIndex] + '<span class="loading-cursor"></span>';
-        textIndex++;
-      }
-    }
-
-    // Update text every 800ms
-    const loadingInterval = setInterval(updateLoadingText, 800);
-
-    // Hide loading screen when app loads
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen) {
-          loadingScreen.style.opacity = '0';
-          loadingScreen.style.transition = 'opacity 0.5s ease-out';
-          setTimeout(() => {
-            loadingScreen.style.display = 'none';
-          }, 500);
+        function updateLoadingText() {
+            if (loadingTextElement && textIndex < loadingTexts.length) {
+                loadingTextElement.innerHTML = loadingTexts[textIndex] + '<span class="loading-cursor"></span>';
+                textIndex++;
+            }
         }
-        clearInterval(loadingInterval);
-      }, 3000); // Keep loading screen for at least 3 seconds
-    });
-  </script>
+
+        // Update text every 800ms
+        const loadingInterval = setInterval(updateLoadingText, 800);
+
+        // Hide loading screen when app loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loading-screen');
+                if (loadingScreen) {
+                    loadingScreen.style.opacity = '0';
+                    loadingScreen.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 500);
+                }
+                clearInterval(loadingInterval);
+            }, 3000); // Keep loading screen for at least 3 seconds
+        });
+
+        // Service Worker registration (optional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
 </body>
 </html>
