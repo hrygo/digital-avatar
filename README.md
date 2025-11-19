@@ -1,213 +1,401 @@
-# 🧠 TwinOS - 智能决策副驾系统
+# TwinOS - 智能决策副驾系统
 
-> **"你就负责思考，剩下的交给它。"**
+<div align="center">
 
-## 📋 项目概述
+![TwinOS Logo](https://via.placeholder.com/200x80/000000/FFFFFF?text=TwinOS)
 
-TwinOS 是面向高净值人群和商业精英的 **"极致效率型数字分身"** 系统。它不是简单的聊天机器人，而是用户的 **"第二大脑"** 和 **"认知外接器官"**，通过深度信息处理和智能分析，为用户提供决策支持和效率提升。
+[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://golang.org)
+[![React Version](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)](https://reactjs.org)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=flat-square)](https://github.com/your-username/twin-os/actions)
 
-## 🎯 核心价值主张
+**你就负责思考，剩下的交给它**
 
-### 用户痛点解决
-- ❌ **信息过载** → ✅ **智能降噪，只留信号**
-- ❌ **时间稀缺** → ✅ **自动化处理，节省时间**
-- ❌ **决策困难** → ✅ **数据驱动，智能建议**
-- ❌ **关系维护难** → ✅ **人脉雷达，主动提醒**
+[快速开始](#快速开始) • [功能特性](#功能特性) • [文档](#📚-文档) • [贡献](#贡献)
 
-### 核心功能
-- 📊 **今日情报简报**: AI生成的300字摘要，概括关键信息
-- 📋 **决策待办**: 自动识别高优先级事项，避免遗漏
-- 🎯 **人脉雷达**: 谁在谈论你？谁提及了关键项目？
-- 🔒 **隐私保护**: 本地处理，端到端加密，数据永不上云
+</div>
+
+## 📖 项目简介
+
+TwinOS是一个基于人工智能的智能决策副驾系统，专为提升个人和团队决策效率而设计。系统结合了深度学习、自然语言处理和知识图谱技术，为用户提供智能化的数据分析、决策支持和知识管理服务。
+
+### 🎯 核心理念
+
+- **智能辅助**: 通过AI技术增强人类决策能力
+- **知识驱动**: 构建个人和组织知识图谱
+- **数据安全**: 端到端加密，保护用户隐私
+- **开放生态**: 模块化设计，支持插件扩展
+
+## ✨ 功能特性
+
+### 🧠 智能分析引擎
+- **深度洞察**: 基于聊天记录的智能分析
+- **待办提取**: 自动识别和整理任务清单
+- **关系图谱**: 构建人脉关系和社交网络
+- **情感分析**: 理解对话情绪和语调
+
+### 💾 数据管理系统
+- **微信集成**: 安全连接和同步微信数据
+- **多源支持**: 支持多种数据源导入
+- **实时同步**: 增量同步，保持数据最新
+- **隐私保护**: PII自动脱敏，保护敏感信息
+
+### 🛡️ 企业级安全
+- **端到端加密**: 军用级数据加密
+- **备份恢复**: 自动备份，一键恢复
+- **访问控制**: 细粒度权限管理
+- **审计日志**: 完整的操作记录追踪
+
+### 🚀 高性能架构
+- **微服务设计**: 松耦合，高可扩展性
+- **智能缓存**: 多层缓存优化性能
+- **容器化部署**: Docker/Kubernetes支持
+- **监控告警**: 实时性能监控
 
 ## 🏗️ 技术架构
 
-### 技术栈
-- **前端**: Electron + React + TypeScript + TailwindCSS
-- **后端**: Go 1.21+ + Gin + GORM
-- **AI**: DeepSeek API + 自定义Prompt工程
-- **数据库**: SQLite (本地) + Redis (缓存)
-- **安全**: AES-256-GCM + 多层加密保护
+### 后端技术栈
+- **语言**: Go 1.21+
+- **框架**: Gin (高性能HTTP框架)
+- **数据库**: SQLite (轻量级) + Redis (缓存)
+- **AI引擎**: DeepSeek API
+- **消息队列**: 内置任务调度器
 
-### 系统架构
-```
-感知层 → 认知层 → 决策层 → 执行层 → 基础层
-  ↓        ↓        ↓        ↓        ↓
-数据采集 → AI分析 → 策略生成 → 任务执行 → 安全存储
-```
+### 前端技术栈
+- **框架**: React 18 + TypeScript
+- **构建工具**: Create React App
+- **状态管理**: Zustand
+- **UI组件**: Tailwind CSS + Headless UI
+- **动画**: Framer Motion
 
-## 📁 项目结构
-
-```
-twinos/
-├── docs/                    # 项目文档
-│   ├── prd.md               # 产品需求文档
-│   ├── product-design.md    # 详细产品设计
-│   ├── product-roadmap.md   # 产品迭代计划
-│   └── KICKOFF.md          # 项目启动文档
-├── frontend/                # React + Electron 前端
-│   ├── src/
-│   │   ├── main/           # Electron 主进程
-│   │   ├── renderer/       # React 渲染进程
-│   │   └── shared/         # 共享代码
-│   ├── public/
-│   └── package.json
-├── backend/                 # Go 后端服务
-│   ├── cmd/server/         # 服务器入口
-│   ├── internal/           # 业务逻辑
-│   │   ├── api/           # API 路由
-│   │   ├── config/        # 配置管理
-│   │   ├── database/      # 数据库操作
-│   │   ├── models/        # 数据模型
-│   │   ├── services/      # 业务逻辑
-│   │   ├── ai/           # AI处理模块
-│   │   ├── processor/    # 数据处理模块
-│   │   └── security/      # 安全模块
-│   ├── pkg/               # 公共包
-│   ├── go.mod
-│   └── go.sum
-├── scripts/               # 构建和部署脚本
-├── tests/                 # 测试文件
-└── README.md
-```
+### 部署架构
+- **容器化**: Docker + Docker Compose
+- **反向代理**: Nginx
+- **进程管理**: Systemd
+- **监控**: 内置性能监控
 
 ## 🚀 快速开始
 
 ### 环境要求
-- **Go**: 1.21+
-- **Node.js**: 18+
-- **Python**: 3.8+ (用于AI开发)
+
+- **Go**: 1.21 或更高版本
+- **Node.js**: 18.0 或更高版本
 - **Git**: 最新版本
+- **操作系统**: Linux/macOS/Windows
 
-### 安装步骤
+### 一键安装
 
-1. **克隆项目**
 ```bash
-git clone https://github.com/your-org/twinos.git
-cd twinos
+# 克隆项目
+git clone https://github.com/your-username/twin-os.git
+cd twin-os
+
+# 初始化开发环境
+make init
+
+# 启动开发服务器
+make dev
 ```
 
-2. **后端设置**
+### 手动安装
+
+<details>
+<summary>点击展开详细步骤</summary>
+
+#### 1. 克隆项目
 ```bash
+git clone https://github.com/your-username/twin-os.git
+cd twin-os
+```
+
+#### 2. 安装依赖
+```bash
+# 安装Go依赖
 cd backend
 go mod download
-go run cmd/server/main.go
-```
+go mod tidy
 
-3. **前端设置**
-```bash
-cd frontend
+# 安装Node.js依赖
+cd ../frontend
 npm install
-npm run dev
 ```
 
-4. **配置环境变量**
+#### 3. 配置环境
 ```bash
-# 复制环境变量模板
-cp .env.example .env
+# 复制环境配置文件
+cp backend/.env.example backend/.env
 
-# 编辑配置文件
-vim .env
+# 编辑配置文件，设置API密钥等
+vim backend/.env
 ```
 
-### 开发指南
-1. 阅读 [KICKOFF.md](./KICKOFF.md) 了解项目启动流程
-2. 查看 [product-roadmap.md](./product-roadmap.md) 了解开发计划
-3. 参考 [product-design.md](./product-design.md) 了解技术架构
+#### 4. 启动服务
+```bash
+# 启动后端服务 (终端1)
+cd backend
+go run main.go
 
-## 📊 项目进度 (2025/11/19)
+# 启动前端服务 (终端2)
+cd frontend
+npm start
+```
+</details>
 
-### 🎉 MVP系统完成状态 - 100%核心功能可用！
+### 访问应用
 
-**两人敏捷团队开发模式 - 效率验证成功**
-- **项目负责人**: 产品决策 + 技术架构 + 核心开发 + 质量把控
-- **AI助手**: 全栈实现 + 问题诊断 + 文档维护 + 24小时响应
-- **协作方式**: 小步慢跑迭代，每日可交付增量
-- **开发效率**: 相当于3-4名高级工程师总和 ✅ **已验证**
+- **Web界面**: http://localhost:3000
+- **API文档**: http://localhost:1234/health
+- **后端服务**: http://localhost:1234
 
-### 完整功能状态
-| 功能模块 | 状态 | 完成度 | 端口 | 测试结果 |
-|---------|------|--------|------|---------|
-| 后端API架构 | ✅ 完成 | 100% | 1234 | 所有接口正常 |
-| 微信数据库连接 | ✅ 完成 | 100% | 1234 | 成功连接测试数据 |
-| 数据同步功能 | ✅ 完成 | 100% | 1234 | 10条消息+5联系人同步成功 |
-| AI智能分析 | ✅ 完成 | 100% | 1234 | 情报简报生成正常 |
-| 前端React框架 | ✅ 完成 | 100% | 3000 | 应用运行正常 |
-| 用户界面设计 | ✅ 完成 | 100% | 3000 | UI完整显示 |
-| 前后端通信 | ✅ 完成 | 100% | - | API调用成功 |
-| PII隐私保护 | 🔄 开发中 | 80% | 1234 | 核心功能优先 |
+## 📚 文档
 
-### 今日完成事项 (2025/11/19) - 🚀 **全部完成！**
-- [x] 项目架构设计和环境搭建
-- [x] 后端API完整实现 (端口1234)
-- [x] 微信数据库连接和PII脱敏功能
-- [x] DeepSeek AI集成框架
-- [x] 前端React框架和UI设计
-- [x] 端口配置和基础API测试
-- [x] **消息同步问题修复和验证**
-- [x] **数据库时间戳类型匹配修复**
-- [x] **AI分析功能完整测试**
-- [x] **前后端完整系统联调**
+我们提供了详细的文档来帮助你更好地使用和参与项目：
 
-## 👥 团队成员
+### 🎯 产品文档
+- **[产品需求文档 (PRD)](docs/product/prd.md)** - 了解产品定位、用户画像和核心功能
+- **[产品设计文档](docs/product/product-design.md)** - 详细的UI/UX设计规范
+- **[产品路线图](docs/product/product-roadmap.md)** - 版本规划和未来发展方向
 
-### 核心团队
-- **产品负责人**: [姓名] - 产品规划和用户体验
-- **技术负责人**: [姓名] - 架构设计和技术决策
-- **前端团队**: [姓名], [姓名] - React/Electron开发
-- **后端团队**: [姓名], [姓名] - Go后端开发
-- **AI工程师**: [姓名] - AI集成和算法优化
-- **UI/UX设计师**: [姓名] - 界面和交互设计
+### 🚀 项目管理
+- **[项目启动文档](docs/project/kickoff.md)** - 项目背景、目标和团队介绍
+- **[冲刺计划](docs/project/sprint-plan.md)** - 开发里程碑和迭代计划
+- **[项目状态](docs/project/project-status.md)** - 当前进度和风险跟踪
+- **[MVP范围调整](docs/project/mvp-scope-adjustment.md)** - 功能优先级和变更记录
 
-### 联系方式
-- **项目群**: [Slack/钉钉群链接]
-- **技术支持**: [邮箱地址]
-- **紧急联系**: [电话号码]
+### 📖 完整文档中心
+👉 **[访问完整文档中心](docs/README.md)** 查看所有文档的详细导航
 
-## 🔒 安全与隐私
+## 📖 使用指南
 
-### 隐私保护原则
-- **本地优先**: 敏感数据在本地处理，永不上传
-- **端到端加密**: 全链路数据保护
-- **用户控制**: 用户完全掌控自己的数据
-- **透明合规**: 符合相关法律法规要求
+### 基础配置
 
-### 安全措施
-- AES-256-GCM 加密算法
-- 多层身份验证
-- 数据脱敏处理
-- 安全审计日志
+1. **微信连接**: 在设置页面配置微信连接参数
+2. **数据同步**: 首次使用需要同步历史数据
+3. **AI配置**: 配置DeepSeek API密钥
+4. **备份设置**: 设置自动备份策略
+
+### 核心功能
+
+#### 🔍 智能分析
+- 自动分析聊天记录，提取关键信息
+- 生成个人简报和洞察报告
+- 识别重要对话和决策节点
+
+#### 📋 待办管理
+- 从对话中自动提取任务
+- 智能分类和优先级排序
+- 进度跟踪和提醒功能
+
+#### 👥 关系网络
+- 构建人脉关系图谱
+- 分析互动频率和关系强度
+- 发现潜在合作机会
+
+## 🛠️ 开发指南
+
+### 项目结构
+
+```
+twin-os/
+├── backend/              # Go后端服务
+│   ├── internal/        # 内部包
+│   ├── pkg/            # 公共包
+│   ├── main.go         # 入口文件
+│   └── go.mod          # Go模块定义
+├── frontend/           # React前端应用
+│   ├── src/           # 源代码
+│   ├── public/        # 静态资源
+│   └── package.json   # Node.js依赖
+├── docs/              # 项目文档
+├── scripts/           # 构建脚本
+├── build/             # 构建输出
+├── dist/              # 发布文件
+├── Makefile           # 构建命令
+└── README.md          # 项目说明
+```
+
+### 开发命令
+
+```bash
+# 查看所有可用命令
+make help
+
+# 开发环境
+make dev              # 启动开发服务器
+make dev-server       # 仅启动后端
+make dev-web          # 仅启动前端
+
+# 构建
+make build            # 构建所有组件
+make build-server     # 构建后端
+make build-web        # 构建前端
+
+# 测试
+make test             # 运行所有测试
+make test-server      # 测试后端
+make test-web         # 测试前端
+
+# 代码质量
+make lint             # 代码检查
+make format           # 代码格式化
+
+# 部署
+make docker-build     # 构建Docker镜像
+make docker-run       # 运行Docker容器
+```
+
+### 贡献代码
+
+我们欢迎所有形式的贡献！请查看 [贡献指南](CONTRIBUTING.md) 了解详细信息。
+
+#### 开发流程
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
+
+## 📦 部署指南
+
+### Docker部署
+
+```bash
+# 构建镜像
+make docker-build
+
+# 运行容器
+make docker-run
+
+# 查看运行状态
+docker ps
+```
+
+### 生产部署
+
+<details>
+<summary>生产环境部署指南</summary>
+
+#### 1. 服务器要求
+- CPU: 2核心以上
+- 内存: 4GB以上
+- 存储: 20GB以上
+- 操作系统: Linux (推荐Ubuntu 20.04+)
+
+#### 2. 环境准备
+```bash
+# 安装Docker
+curl -fsSL https://get.docker.com | sh
+
+# 安装Docker Compose
+pip install docker-compose
+
+# 克隆项目
+git clone https://github.com/your-username/twin-os.git
+cd twin-os
+```
+
+#### 3. 配置文件
+```bash
+# 复制生产配置
+cp docker-compose.prod.yml docker-compose.yml
+
+# 编辑环境变量
+vim .env.production
+```
+
+#### 4. 启动服务
+```bash
+# 构建和启动
+docker-compose up -d
+
+# 查看服务状态
+docker-compose ps
+```
+</details>
+
+## 🔧 配置说明
+
+### 环境变量
+
+| 变量名 | 描述 | 默认值 | 必需 |
+|--------|------|--------|------|
+| `PORT` | 服务端口 | 1234 | ❌ |
+| `GIN_MODE` | 运行模式 | debug | ❌ |
+| `DB_PATH` | 数据库路径 | ./data/twin-os.db | ❌ |
+| `DEEPSEEK_API_KEY` | AI服务密钥 | - | ✅ |
+| `JWT_SECRET` | JWT密钥 | random | ✅ |
+| `BACKUP_DIR` | 备份目录 | ./backups | ❌ |
+
+### 完整配置示例
+
+```bash
+# backend/.env
+PORT=8080
+GIN_MODE=release
+DB_PATH=/app/data/twin-os.db
+DEEPSEEK_API_KEY=your_api_key_here
+JWT_SECRET=your_jwt_secret_here
+BACKUP_DIR=/app/backups
+LOG_LEVEL=info
+MAX_BACKUP_FILES=10
+```
+
+## 🤝 社区支持
+
+- **GitHub Issues**: [报告问题](https://github.com/your-username/twin-os/issues)
+- **GitHub Discussions**: [社区讨论](https://github.com/your-username/twin-os/discussions)
+- **Wiki**: [详细文档](https://github.com/your-username/twin-os/wiki)
+
+## 📊 项目状态
+
+### 开发进度
+
+- [x] 核心架构设计
+- [x] 用户认证系统
+- [x] 数据同步引擎
+- [x] AI分析模块
+- [x] 备份恢复系统
+- [x] Web用户界面
+- [ ] 移动端应用
+- [ ] 插件系统
+- [ ] 企业版功能
+
+### 路线图
+
+#### v1.0 (当前版本)
+- ✅ 基础功能实现
+- ✅ Web应用发布
+- ✅ Docker支持
+
+#### v1.1 (计划中)
+- 🔄 移动端适配
+- 🔄 更多AI模型支持
+- 🔄 团队协作功能
+
+#### v2.0 (未来版本)
+- 📋 插件生态系统
+- 📋 企业级功能
+- 📋 云端部署版本
 
 ## 📄 许可证
 
-本项目采用 [MIT 许可证](./LICENSE)。
-
-## 🤝 贡献指南
-
-欢迎贡献代码！请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解详细的贡献流程。
-
-### 开发流程
-1. Fork 项目
-2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
-
-## 📞 支持
-
-如果您有任何问题或建议，请通过以下方式联系我们：
-
-- 📧 **邮箱**: support@twinos.ai
-- 💬 **讨论**: [GitHub Discussions]
-- 🐛 **问题报告**: [GitHub Issues]
-- 📱 **微信**: [微信群二维码]
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
 ## 🙏 致谢
 
-感谢所有为 TwinOS 项目做出贡献的团队成员和社区用户！
+感谢以下开源项目的支持：
+
+- [Gin](https://github.com/gin-gonic/gin) - Go Web框架
+- [React](https://github.com/facebook/react) - 用户界面库
+- [DeepSeek](https://github.com/deepseek-ai) - AI模型支持
+- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) - CSS框架
 
 ---
 
-**TwinOS - 你就负责思考，剩下的交给它。** 🚀
+<div align="center">
 
-*让AI成为你的认知延伸，让决策更加智能高效。*
+**[⬆ 回到顶部](#twinos---智能决策副驾系统)**
+
+Made with ❤️ by the TwinOS Team
+
+</div>

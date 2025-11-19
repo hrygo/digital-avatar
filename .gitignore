@@ -1,14 +1,26 @@
 # Dependencies
 node_modules/
-*/node_modules/
+frontend/node_modules/
 
 # Build outputs
-*/backend/backend
-*/frontend/build/
+backend/backend
+frontend/build/
+build/
+dist/
 
 # Cache
 *.cache
-*/node_modules/.cache/
+frontend/node_modules/.cache/
+
+# Application data
+data/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+
+# Claude AI files
+.claude/
 
 # Environment files
 .env
@@ -32,11 +44,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
 
 # Temporary files
 *.tmp

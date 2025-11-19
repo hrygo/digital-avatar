@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # TwinOS 主应用
+  twin-os:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: twin-os-app
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - DB_PATH=/app/data/twin-os.db
+      - BACKUP_DIR=/app/backups
+      - LOG_LEVEL=info
+      - TZ=Asia/Shanghai
+    volumes:
+      - twin-os-data:/app/data
+      - twin-os-backups:/app/backups
+      - twin-os-logs:/app/logs
+    networks:
+      - twin-os-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      - redis
+
+  # Redis 缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: twin-os-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-twinos123}
+    volumes:
+      - twin-os-redis-data:/data
+    networks:
+      - twin-os-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  # Nginx 反向代理 (可选)
+  nginx:
+    image: nginx:alpine
+    container_name: twin-os-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - twin-os-static:/usr/share/nginx/html:ro
+    networks:
+      - twin-os-network
+    depends_on:
+      - twin-os
+    profiles:
+      - production
+
+volumes:
+  twin-os-data:
+    driver: local
+  twin-os-backups:
+    driver: local
+  twin-os-logs:
+    driver: local
+  twin-os-redis-data:
+    driver: local
+  twin-os-static:
+    driver: local
+
+networks:
+  twin-os-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
