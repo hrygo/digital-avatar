@@ -282,7 +282,7 @@ const users = await api.users.list({
 
 ```go
 import (
-    "github.com/digital-avatar/go-sdk"
+    "github.com/hrygo/digital-avatar/go-sdk"
     "context"
 )
 

@@ -86,7 +86,7 @@ digital-avatar/
 #### 🚀 快速开始
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/digital-avatar.git
+git clone https://github.com/hrygo/digital-avatar.git
 cd digital-avatar
 
 # 初始化开发环境

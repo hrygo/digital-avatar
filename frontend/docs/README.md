@@ -61,7 +61,7 @@
 ### 环境搭建
 1. **克隆项目**
 ```bash
-git clone https://github.com/digital-avatar/frontend.git
+git clone https://github.com/hrygo/digital-avatar.git
 cd frontend
 ```
 

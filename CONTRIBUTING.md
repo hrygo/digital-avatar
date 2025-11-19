@@ -5,7 +5,7 @@
 ## 🤝 贡献方式
 
 ### 报告问题
-- 使用 [GitHub Issues](https://github.com/your-username/twin-os/issues) 报告 bug
+- 使用 [GitHub Issues](https://github.com/hrygo/digital-avatar/issues) 报告 bug
 - 在报告中提供详细的重现步骤和环境信息
 - 使用已有的问题模板来确保信息完整
 

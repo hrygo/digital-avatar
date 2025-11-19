@@ -62,7 +62,7 @@ package main
 
 import (
     "fmt"
-    "github.com/your-repo/backend/pkg/crypto"
+    "github.com/hrygo/digital-avatar/backend/pkg/crypto"
 )
 
 func main() {
@@ -177,5 +177,5 @@ go tool cover -html=coverage.out -o coverage.html
 ## 联系我们
 
 - 项目维护者：[项目组信息](CONTRIBUTORS.md)
-- 问题反馈：[GitHub Issues](https://github.com/your-repo/backend/issues)
-- 文档更新：[项目Wiki](https://github.com/your-repo/backend/wiki)
+- 问题反馈：[GitHub Issues](https://github.com/hrygo/digital-avatar/issues)
+- 文档更新：[项目Wiki](https://github.com/hrygo/digital-avatar/wiki)

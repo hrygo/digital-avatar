@@ -46,7 +46,7 @@
 
 **快速使用**:
 ```go
-import "github.com/digital-avatar/backend/pkg/crypto"
+import "github.com/hrygo/digital-avatar/backend/pkg/crypto"
 
 // 创建PII检测器
 detector := crypto.NewNLPPIIDetector()
@@ -78,7 +78,7 @@ processed, entities, err := detector.DetectAndReplace(text, 0.7)
 ### 环境搭建
 1. **克隆项目**
 ```bash
-git clone https://github.com/digital-avatar/backend.git
+git clone https://github.com/hrygo/digital-avatar.git
 cd backend
 ```
 

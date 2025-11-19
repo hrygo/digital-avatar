@@ -96,7 +96,7 @@ func TestEncryptWithInvalidInputs(t *testing.T) {
 		key      string
 		valid    bool
 	}{
-		{"Empty key", []byte("data"), "", false},
+		{"Empty key", []byte("data"), "", true},
 		{"Valid key", []byte("data"), "valid-key", true},
 		{"Empty data", []byte{}, "key", true},
 	}

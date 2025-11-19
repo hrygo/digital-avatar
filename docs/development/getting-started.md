@@ -40,7 +40,7 @@ Digital Avatar是一个智能决策副驾系统，提供：
 ### 2. 克隆项目
 
 ```bash
-git clone https://github.com/digital-avatar/digital-avatar.git
+git clone https://github.com/hrygo/digital-avatar.git
 cd digital-avatar
 ```
 
@@ -257,7 +257,7 @@ package main
 
 import (
     "fmt"
-    "github.com/digital-avatar/backend/pkg/crypto"
+    "github.com/hrygo/digital-avatar/backend/pkg/crypto"
 )
 
 func main() {
@@ -356,8 +356,8 @@ git commit -m "perf(backend): optimize database query performance"
 
 ### 联系方式
 
-- **技术问题**: [GitHub Issues](https://github.com/digital-avatar/digital-avatar/issues)
-- **功能讨论**: [GitHub Discussions](https://github.com/digital-avatar/digital-avatar/discussions)
+- **技术问题**: [GitHub Issues](https://github.com/hrygo/digital-avatar/issues)
+- **功能讨论**: [GitHub Discussions](https://github.com/hrygo/digital-avatar/discussions)
 - **团队沟通**: Slack频道 #digital-avatar
 
 ### 学习资源

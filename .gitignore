@@ -8,6 +8,11 @@ frontend/build/
 build/
 dist/
 
+# Debug executables (should not be committed)
+debug_*
+backend/backend
+frontend/frontend
+
 # Cache
 *.cache
 frontend/node_modules/.cache/
