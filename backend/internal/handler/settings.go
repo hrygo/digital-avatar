@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // SettingsHandler 设置处理器
 type SettingsHandler struct {
-	service *service.SettingsService
+	service *services.SettingsService
 }
 
 // NewSettingsHandler 创建设置处理器
-func NewSettingsHandler(service *service.SettingsService) *SettingsHandler {
+func NewSettingsHandler(service *services.SettingsService) *SettingsHandler {
 	return &SettingsHandler{service: service}
 }
 

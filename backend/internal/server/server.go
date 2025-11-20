@@ -2,9 +2,13 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -12,20 +16,35 @@ import (
 	"twin-os/backend/internal/config"
 	"twin-os/backend/internal/handler"
 	"twin-os/backend/internal/repository"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 	"twin-os/backend/pkg/cache"
 	"twin-os/backend/pkg/database"
 	"twin-os/backend/pkg/logger"
 )
+
+// APIStats API性能统计
+type APIStats struct {
+	TotalRequests      int64 `json:"total_requests"`
+	ActiveRequests     int64 `json:"active_requests"`
+	SuccessfulRequests int64 `json:"successful_requests"`
+	ErrorRequests      int64 `json:"error_requests"`
+	AvgResponseTime    int64 `json:"avg_response_time_ms"`
+	MaxResponseTime    int64 `json:"max_response_time_ms"`
+}
 
 type Server struct {
 	config       *config.Config
 	router       *gin.Engine
 	httpServer   *http.Server
 	handlers     *handler.Handler
-	services     *service.Service
 	repositories *repository.Repository
+	services     *services.Service
 	cacheManager *cache.CacheManager
+
+	// v0.3.0 性能优化相关
+	apiStats      *APIStats
+	statsMutex    *sync.RWMutex
+	slowThreshold time.Duration
 }
 
 func New(cfg *config.Config) *Server {
@@ -36,10 +55,11 @@ func New(cfg *config.Config) *Server {
 	repos := repository.New(db)
 
 	// 初始化服务层
-	srvs := service.New(cfg, repos)
+	// 初始化服务聚合
+	svc := services.New(cfg, repos)
 
 	// 初始化处理器层
-	hdlrs := handler.New(srvs)
+	hdlrs := handler.New(svc)
 
 	// 初始化缓存管理器
 	cacheMgr := cache.NewCacheManager()
@@ -51,9 +71,13 @@ func New(cfg *config.Config) *Server {
 		config:        cfg,
 		router:        router,
 		handlers:      hdlrs,
-		services:      srvs,
 		repositories:  repos,
+		services:      svc,
 		cacheManager:  cacheMgr,
+		// v0.3.0 性能优化初始化
+		apiStats:      &APIStats{},
+		statsMutex:    &sync.RWMutex{},
+		slowThreshold: 100 * time.Millisecond,
 	}
 }
 
@@ -63,10 +87,14 @@ func (s *Server) Start() error {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// 创建 HTTP 服务器
+	// 创建 HTTP 服务器 - v0.3.0性能优化配置
 	s.httpServer = &http.Server{
-		Addr:    ":" + s.config.Port,
-		Handler: s.router,
+		Addr:         ":" + s.config.Port,
+		Handler:      s.router,
+		ReadTimeout:  10 * time.Second,  // 读取超时
+		WriteTimeout: 10 * time.Second,  // 写入超时
+		IdleTimeout:  120 * time.Second, // 空闲连接超时
+		MaxHeaderBytes: 1 << 20,         // 1MB header limit
 	}
 
 	logger.Info("🌐 HTTP Server starting on port " + s.config.Port)
@@ -79,6 +107,15 @@ func (s *Server) Start() error {
 	}()
 
 	logger.Info("✅ TwinOS Backend started successfully")
+
+	// 启动自动同步服务 (v0.4.0)
+	go func() {
+		// 延迟启动，确保系统完全启动
+		time.Sleep(time.Second * 5)
+		if err := s.services.AutoSync.StartOnStartup(); err != nil {
+			logger.Warn("⚠️ 自动同步启动失败: " + err.Error())
+		}
+	}()
 
 	// 等待中断信号来优雅地关闭服务器
 	return s.gracefulShutdown()
@@ -111,13 +148,98 @@ func (s *Server) gracefulShutdown() error {
 	return nil
 }
 
+// GetAPIStats 获取API性能统计
+func (s *Server) GetAPIStats() APIStats {
+	s.statsMutex.RLock()
+	defer s.statsMutex.RUnlock()
+	return *s.apiStats
+}
+
+// trackAPIPerformance 追踪API性能
+func (s *Server) trackAPIPerformance(method, path string, statusCode int, duration time.Duration) {
+	millis := duration.Milliseconds()
+
+	// 原子操作更新统计
+	atomic.AddInt64(&s.apiStats.TotalRequests, 1)
+
+	// 更新响应时间统计
+	atomic.StoreInt64(&s.apiStats.AvgResponseTime, millis)
+
+	// 更新最大响应时间
+	for {
+		currentMax := atomic.LoadInt64(&s.apiStats.MaxResponseTime)
+		if millis <= currentMax || atomic.CompareAndSwapInt64(&s.apiStats.MaxResponseTime, currentMax, millis) {
+			break
+		}
+	}
+
+	// 分类统计
+	if statusCode >= 200 && statusCode < 400 {
+		atomic.AddInt64(&s.apiStats.SuccessfulRequests, 1)
+	} else {
+		atomic.AddInt64(&s.apiStats.ErrorRequests, 1)
+	}
+
+	// 慢请求检测
+	if duration > s.slowThreshold {
+		logger.Warn(fmt.Sprintf("🐌 Slow API request: %s %s - %v (status: %d)", method, path, duration, statusCode))
+	}
+}
+
+// GetServerHealth 获取服务器健康状态
+func (s *Server) GetServerHealth() map[string]interface{} {
+	stats := s.GetAPIStats()
+	dbHealth := database.GetDatabaseHealth()
+
+	health := map[string]interface{}{
+		"status":    "healthy",
+		"timestamp": time.Now().Unix(),
+		"version":   "0.3.0",
+		"api": map[string]interface{}{
+			"total_requests":      stats.TotalRequests,
+			"active_requests":     stats.ActiveRequests,
+			"successful_requests": stats.SuccessfulRequests,
+			"error_requests":      stats.ErrorRequests,
+			"avg_response_ms":     stats.AvgResponseTime,
+			"max_response_ms":     stats.MaxResponseTime,
+			"success_rate":        float64(stats.SuccessfulRequests) / float64(stats.TotalRequests) * 100,
+		},
+		"database": dbHealth,
+		"system": map[string]interface{}{
+			"goroutines": runtime.NumGoroutine(),
+			"cpu_count":  runtime.NumCPU(),
+		},
+	}
+
+	// 判断整体健康状态
+	if stats.TotalRequests > 0 {
+		errorRate := float64(stats.ErrorRequests) / float64(stats.TotalRequests) * 100
+		if errorRate > 10 {
+			health["status"] = "poor"
+		} else if errorRate > 5 {
+			health["status"] = "degraded"
+		}
+	}
+
+	if dbStatus, ok := dbHealth["status"].(string); ok && dbStatus != "healthy" {
+		health["status"] = "degraded"
+		if dbStatus == "poor" {
+			health["status"] = "poor"
+		}
+	}
+
+	return health
+}
+
 func setupRouter(cfg *config.Config, h *handler.Handler, cacheMgr *cache.CacheManager) *gin.Engine {
 	r := gin.New()
 
-	// 中间件
+	// v0.3.0 性能优化中间件
+	r.Use(performanceMiddleware())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(corsMiddleware())
+	r.Use(rateLimitMiddleware())
 
 	// 获取API缓存实例
 	apiCache := cacheMgr.GetCache("api")
@@ -129,29 +251,82 @@ func setupRouter(cfg *config.Config, h *handler.Handler, cacheMgr *cache.CacheMa
 	longCacheConfig := cache.DefaultCacheConfig()
 	longCacheConfig.TTL = 10 * time.Minute // 长期缓存10分钟
 
-	// 健康检查
+	// 健康检查 - v0.3.0增强版本
 	r.GET("/health", func(c *gin.Context) {
+		// 这里需要访问server实例，暂时使用简化版本
 		c.JSON(200, gin.H{
 			"status":    "ok",
 			"timestamp": time.Now().Unix(),
-			"version":   "0.1.0",
+			"version":   "0.3.0",
+		})
+	})
+
+	// 详细健康检查 - v0.3.0新增
+	r.GET("/health/detailed", func(c *gin.Context) {
+		dbHealth := database.GetDatabaseHealth()
+
+		c.JSON(200, gin.H{
+			"status":     "ok",
+			"timestamp":  time.Now().Unix(),
+			"version":    "0.3.0",
+			"database":   dbHealth,
+			"system": gin.H{
+				"goroutines": runtime.NumGoroutine(),
+				"cpu_count":  runtime.NumCPU(),
+			},
 		})
 	})
 
 	// API 路由组
 	api := r.Group("/api/v1")
 	{
-		// 微信数据相关
+		// 微信数据相关 v0.4.0 - 完整API
 		api.POST("/wechat/connect", h.WeChat.Connect)
-
-		// 缓存状态查询 - 短期缓存
-		api.GET("/wechat/status", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.Status)
 		api.POST("/wechat/sync", h.WeChat.Sync)
+
+		// 微信状态和数据查询 - 缓存状态查询
+		api.GET("/wechat/status", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.Status)
+
+		// 实时同步相关 v0.4.0 - 准实时同步API
+		api.POST("/sync/start", h.RealtimeSync.StartSync)
+		api.POST("/sync/stop", h.RealtimeSync.StopSync)
+		api.GET("/sync/status", h.RealtimeSync.GetSyncStatus)
+		api.POST("/sync/manual", h.RealtimeSync.TriggerManualSync)
+		api.GET("/sync/config", h.RealtimeSync.GetConfig)
+		api.PUT("/sync/config", h.RealtimeSync.UpdateConfig)
+		api.GET("/sync/detect-wechat", h.RealtimeSync.DetectWeChatDB)
+		api.GET("/sync/history", h.RealtimeSync.GetSyncHistory)
+
+		// 微信数据CRUD操作 - 缓存数据查询
+		api.GET("/wechat/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetMessages)
+		api.GET("/wechat/contacts", cache.CacheMiddleware(apiCache, longCacheConfig), h.WeChat.GetContacts)
+		api.GET("/wechat/chats", cache.CacheMiddleware(apiCache, longCacheConfig), h.WeChat.GetChats)
+		api.GET("/wechat/sync-records", h.WeChat.GetSyncRecords)
+
+		// 微信搜索功能 - 不缓存实时搜索
+		api.GET("/wechat/search", h.WeChat.SearchMessages)
+
+		// 微信统计信息 - 短期缓存统计数据
+		api.GET("/wechat/statistics", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetStatistics)
+
+		// 聊天详情 - 缓存聊天消息
+		api.GET("/wechat/chats/:chat_id/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetChatMessages)
 
 		// 数据分析相关 (不缓存 - 这些是计算密集型操作，结果应该实时)
 		api.POST("/analysis/briefing", h.Analysis.GenerateBriefing)
 		api.POST("/analysis/todos", h.Analysis.ExtractTodos)
 		api.POST("/analysis/connections", h.Analysis.AnalyzeConnections)
+
+		// 增强AI分析相关 (不缓存 - 实时AI计算)
+		api.POST("/analysis/message", h.EnhancedAnalysis.AnalyzeMessage)
+		api.GET("/analysis/conversation", h.EnhancedAnalysis.AnalyzeConversation)
+		api.GET("/analysis/emotion/trend", h.EnhancedAnalysis.GetEmotionTrend)
+		api.GET("/analysis/topics", h.EnhancedAnalysis.GetTopicAnalysis)
+		api.GET("/analysis/intents", h.EnhancedAnalysis.GetIntentDistribution)
+		api.GET("/analysis/summary", h.EnhancedAnalysis.GetConversationSummary)
+		api.POST("/analysis/batch", h.EnhancedAnalysis.BatchAnalyzeMessages)
+		api.GET("/analysis/status", h.EnhancedAnalysis.GetAnalysisStatus)
+		api.PUT("/analysis/config", h.EnhancedAnalysis.ConfigureAnalysis)
 
 		// 用户数据相关 - 缓存数据查询
 		api.GET("/data/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.Data.GetMessages)
@@ -236,6 +411,65 @@ func corsMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		c.Next()
+	}
+}
+
+// performanceMiddleware v0.3.0性能监控中间件
+func performanceMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+
+		duration := time.Since(start)
+
+		// 记录慢请求
+		if duration > 200*time.Millisecond {
+			logger.Warn(fmt.Sprintf("🐌 Slow request: %s %s - %v", c.Request.Method, c.Request.URL.Path, duration))
+		}
+
+		// 设置性能响应头
+		c.Header("X-Response-Time", duration.String())
+		c.Header("X-Request-ID", c.GetHeader("X-Request-ID"))
+	}
+}
+
+// rateLimitMiddleware v0.3.0简单限流中间件
+func rateLimitMiddleware() gin.HandlerFunc {
+	// 简单的内存限流器，生产环境建议使用Redis
+	clients := make(map[string][]time.Time)
+	var mutex sync.Mutex
+
+	return func(c *gin.Context) {
+		clientIP := c.ClientIP()
+		now := time.Now()
+
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		// 清理过期记录
+		if timestamps, exists := clients[clientIP]; exists {
+			var validTimestamps []time.Time
+			for _, timestamp := range timestamps {
+				if now.Sub(timestamp) < time.Minute {
+					validTimestamps = append(validTimestamps, timestamp)
+				}
+			}
+			clients[clientIP] = validTimestamps
+		}
+
+		// 检查频率限制 (每分钟100个请求)
+		if len(clients[clientIP]) >= 100 {
+			c.JSON(429, gin.H{
+				"error": "Too many requests",
+				"limit": "100 requests per minute",
+			})
+			c.Abort()
+			return
+		}
+
+		// 记录当前请求
+		clients[clientIP] = append(clients[clientIP], now)
 		c.Next()
 	}
 }

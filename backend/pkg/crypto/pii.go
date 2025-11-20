@@ -8,413 +8,24 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"regexp"
-	"strings"
 )
 
-// PIIDetector PII检测器
+// PIIDetector PII检测器（兼容接口）
+// 注意：这是一个兼容层，内部使用新的NLPPIIDetector
+// 建议新代码直接使用NLPPIIDetector
 type PIIDetector struct {
-	namePatterns      []*regexp.Regexp
-	phonePatterns     []*regexp.Regexp
-	emailPatterns     []*regexp.Regexp
-	addressPatterns   []*regexp.Regexp
-	idCardPatterns    []*regexp.Regexp
-	companyPatterns   []*regexp.Regexp
-	replacementMap    map[string]string
+	nlpDetector *NLPPIIDetector
 }
 
-// NewPIIDetector 创建PII检测器
-func NewPIIDetector() *PIIDetector {
-	detector := &PIIDetector{
-		replacementMap: make(map[string]string),
-	}
-
-	// 初始化正则表达式模式
-	detector.initPatterns()
-
-	return detector
-}
-
-// initPatterns 初始化检测模式
-func (d *PIIDetector) initPatterns() {
-	// 中文姓名模式（2-4个中文字符）
-	d.namePatterns = append(d.namePatterns,
-		regexp.MustCompile(`[\p{Han}]{2,4}`),
-	)
-
-	// 电话号码模式
-	d.phonePatterns = append(d.phonePatterns,
-		regexp.MustCompile(`1[3-9]\d{9}`),                     // 手机号
-		regexp.MustCompile(`\d{3,4}-\d{7,8}`),               // 固定电话
-		regexp.MustCompile(`\+\d{2,3}\s?\d{3,4}\s?\d{7,8}`), // 国际号码
-	)
-
-	// 邮箱模式
-	d.emailPatterns = append(d.emailPatterns,
-		regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`),
-	)
-
-	// 身份证模式
-	d.idCardPatterns = append(d.idCardPatterns,
-		regexp.MustCompile(`\d{17}[\dXx]`), // 18位身份证
-		regexp.MustCompile(`\d{15}`),       // 15位身份证
-	)
-
-	// 公司名模式（简化版）
-	d.companyPatterns = append(d.companyPatterns,
-		regexp.MustCompile(`[\p{Han}]+(?:有限公司|股份有限公司|集团|科技|网络|信息|文化|教育|医疗|金融|投资)`),
-		regexp.MustCompile(`[\p{Han}]+(?:公司|企业|机构|中心)`),
-	)
-}
-
-// DetectAndReplace 检测并替换PII信息
-func (d *PIIDetector) DetectAndReplace(text string) (string, PIIReport) {
-	report := PIIReport{
-		OriginalText: text,
-		Detections:   make([]PIIDetection, 0),
-	}
-
-	// 先收集所有的检测结果
-	allDetections := d.collectAllDetections(text)
-
-	// 按位置排序，从后往前替换避免位置偏移问题
-	sortDetectionsByPosition(allDetections)
-
-	result := text
-	// 从后往前替换，避免位置偏移
-	for i := len(allDetections) - 1; i >= 0; i-- {
-		detection := allDetections[i]
-
-		// 验证位置有效性
-		if detection.StartPos >= 0 && detection.EndPos <= len(result) && detection.StartPos < detection.EndPos {
-			original := result[detection.StartPos:detection.EndPos]
-			replacement := d.getReplacement(detection.Type, original)
-			result = result[:detection.StartPos] + replacement + result[detection.EndPos:]
-
-			// 更新检测信息
-			detection.Original = original
-			detection.Replaced = replacement
-			report.Detections = append(report.Detections, detection)
-		}
-	}
-
-	report.ProcessedText = result
-	report.TotalDetections = len(report.Detections)
-
-	return result, report
-}
-
-// collectAllDetections 收集所有PII检测结果
-func (d *PIIDetector) collectAllDetections(text string) []PIIDetection {
-	allDetections := make([]PIIDetection, 0)
-
-	// 收集姓名检测结果
-	allDetections = append(allDetections, d.collectNameDetections(text)...)
-
-	// 收集电话检测结果
-	allDetections = append(allDetections, d.collectPhoneDetections(text)...)
-
-	// 收集邮箱检测结果
-	allDetections = append(allDetections, d.collectEmailDetections(text)...)
-
-	// 收集身份证检测结果
-	allDetections = append(allDetections, d.collectIDCardDetections(text)...)
-
-	// 收集公司名检测结果
-	allDetections = append(allDetections, d.collectCompanyDetections(text)...)
-
-	return allDetections
-}
-
-// sortDetectionsByPosition 按位置排序检测结果
-func sortDetectionsByPosition(detections []PIIDetection) {
-	for i := 0; i < len(detections)-1; i++ {
-		for j := i + 1; j < len(detections); j++ {
-			if detections[i].StartPos > detections[j].StartPos {
-				detections[i], detections[j] = detections[j], detections[i]
-			}
-		}
-	}
-}
-
-// collectNameDetections 收集姓名检测结果
-func (d *PIIDetector) collectNameDetections(text string) []PIIDetection {
-	detections := make([]PIIDetection, 0)
-	for _, pattern := range d.namePatterns {
-		matches := pattern.FindAllStringSubmatchIndex(text, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				start, end := match[0], match[1]
-				if start >= 0 && end <= len(text) && start < end {
-					original := text[start:end]
-
-					// 过滤掉一些明显不是姓名的词
-					if d.isLikelyName(original) {
-						detection := PIIDetection{
-							Type:      "name",
-							Original:  original,
-							Replaced:  "", // 将在主函数中填充
-							StartPos:  start,
-							EndPos:    end,
-							Confidence: d.calculateConfidence("name", original),
-						}
-						detections = append(detections, detection)
-					}
-				}
-			}
-		}
-	}
-	return detections
-}
-
-// collectPhoneDetections 收集电话检测结果
-func (d *PIIDetector) collectPhoneDetections(text string) []PIIDetection {
-	detections := make([]PIIDetection, 0)
-	for _, pattern := range d.phonePatterns {
-		matches := pattern.FindAllStringSubmatchIndex(text, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				start, end := match[0], match[1]
-				if start >= 0 && end <= len(text) && start < end {
-					original := text[start:end]
-
-					detection := PIIDetection{
-						Type:      "phone",
-						Original:  original,
-						Replaced:  "", // 将在主函数中填充
-						StartPos:  start,
-						EndPos:    end,
-						Confidence: 0.95, // 电话号码匹配置信度高
-					}
-					detections = append(detections, detection)
-				}
-			}
-		}
-	}
-	return detections
-}
-
-// collectEmailDetections 收集邮箱检测结果
-func (d *PIIDetector) collectEmailDetections(text string) []PIIDetection {
-	detections := make([]PIIDetection, 0)
-	for _, pattern := range d.emailPatterns {
-		matches := pattern.FindAllStringSubmatchIndex(text, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				start, end := match[0], match[1]
-				if start >= 0 && end <= len(text) && start < end {
-					original := text[start:end]
-
-					detection := PIIDetection{
-						Type:      "email",
-						Original:  original,
-						Replaced:  "", // 将在主函数中填充
-						StartPos:  start,
-						EndPos:    end,
-						Confidence: 0.95, // 邮箱匹配置信度高
-					}
-					detections = append(detections, detection)
-				}
-			}
-		}
-	}
-	return detections
-}
-
-// collectIDCardDetections 收集身份证检测结果
-func (d *PIIDetector) collectIDCardDetections(text string) []PIIDetection {
-	detections := make([]PIIDetection, 0)
-	for _, pattern := range d.idCardPatterns {
-		matches := pattern.FindAllStringSubmatchIndex(text, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				start, end := match[0], match[1]
-				if start >= 0 && end <= len(text) && start < end {
-					original := text[start:end]
-
-					// 验证身份证格式
-					if d.isValidIDCard(original) {
-						detection := PIIDetection{
-							Type:      "idcard",
-							Original:  original,
-							Replaced:  "", // 将在主函数中填充
-							StartPos:  start,
-							EndPos:    end,
-							Confidence: 0.9,
-						}
-						detections = append(detections, detection)
-					}
-				}
-			}
-		}
-	}
-	return detections
-}
-
-// collectCompanyDetections 收集公司名检测结果
-func (d *PIIDetector) collectCompanyDetections(text string) []PIIDetection {
-	detections := make([]PIIDetection, 0)
-	for _, pattern := range d.companyPatterns {
-		matches := pattern.FindAllStringSubmatchIndex(text, -1)
-		for _, match := range matches {
-			if len(match) >= 2 {
-				start, end := match[0], match[1]
-				if start >= 0 && end <= len(text) && start < end {
-					original := text[start:end]
-
-					detection := PIIDetection{
-						Type:      "company",
-						Original:  original,
-						Replaced:  "", // 将在主函数中填充
-						StartPos:  start,
-						EndPos:    end,
-						Confidence: 0.7, // 公司名匹配置信度中等
-					}
-					detections = append(detections, detection)
-				}
-			}
-		}
-	}
-	return detections
-}
-
-// isLikelyName 判断是否可能是姓名
-func (d *PIIDetector) isLikelyName(text string) bool {
-	// 排除一些明显不是姓名的词
-	excludeWords := []string{
-		"微信", "公司", "有限公司", "集团", "科技", "网络", "信息",
-		"文化", "教育", "医疗", "金融", "投资", "产品", "项目",
-		"系统", "平台", "服务", "客户", "用户", "经理", "总监",
-		"老师", "医生", "律师", "工程师", "设计师", "开发",
-	}
-
-	for _, word := range excludeWords {
-		if strings.Contains(text, word) {
-			return false
-		}
-	}
-
-	// 检查字符长度
-	runes := []rune(text)
-	if len(runes) < 2 || len(runes) > 4 {
-		return false
-	}
-
-	return true
-}
-
-// isValidIDCard 验证身份证格式
-func (d *PIIDetector) isValidIDCard(idCard string) bool {
-	if len(idCard) == 18 {
-		// 18位身份证验证
-		return d.validateIDCard18(idCard)
-	} else if len(idCard) == 15 {
-		// 15位身份证验证
-		return d.validateIDCard15(idCard)
-	}
-	return false
-}
-
-// validateIDCard18 验证18位身份证
-func (d *PIIDetector) validateIDCard18(idCard string) bool {
-	if len(idCard) != 18 {
-		return false
-	}
-
-	// 检查前17位是否为数字
-	for i := 0; i < 17; i++ {
-		if idCard[i] < '0' || idCard[i] > '9' {
-			return false
-		}
-	}
-
-	// 检查最后一位
-	lastChar := idCard[17]
-	if !(lastChar >= '0' && lastChar <= '9' || lastChar == 'X' || lastChar == 'x') {
-		return false
-	}
-
-	return true
-}
-
-// validateIDCard15 验证15位身份证
-func (d *PIIDetector) validateIDCard15(idCard string) bool {
-	if len(idCard) != 15 {
-		return false
-	}
-
-	// 检查是否全为数字
-	for _, char := range idCard {
-		if char < '0' || char > '9' {
-			return false
-		}
-	}
-
-	return true
-}
-
-// getReplacement 获取替换文本
-func (d *PIIDetector) getReplacement(piiType, original string) string {
-	key := fmt.Sprintf("%s_%s", piiType, original)
-
-	// 如果已经生成过替换，使用相同的替换
-	if replacement, exists := d.replacementMap[key]; exists {
-		return replacement
-	}
-
-	// 生成新的替换
-	var replacement string
-	switch piiType {
-	case "name":
-		replacement = fmt.Sprintf("[姓名%d]", len(d.replacementMap)+1)
-	case "phone":
-		replacement = "[手机号码]"
-	case "email":
-		replacement = "[邮箱地址]"
-	case "idcard":
-		replacement = "[身份证号]"
-	case "company":
-		replacement = fmt.Sprintf("[公司%d]", len(d.replacementMap)+1)
-	default:
-		replacement = "[敏感信息]"
-	}
-
-	d.replacementMap[key] = replacement
-	return replacement
-}
-
-// calculateConfidence 计算检测置信度
-func (d *PIIDetector) calculateConfidence(piiType, original string) float64 {
-	switch piiType {
-	case "phone":
-		return 0.95
-	case "email":
-		return 0.95
-	case "idcard":
-		return 0.9
-	case "name":
-		// 根据长度和复杂度计算置信度
-		runes := []rune(original)
-		if len(runes) == 2 || len(runes) == 3 {
-			return 0.8
-		}
-		return 0.6
-	case "company":
-		return 0.7
-	default:
-		return 0.5
-	}
-}
-
-// PIIReport PII检测报告
+// PIIReport PII检测报告（兼容结构）
 type PIIReport struct {
-	OriginalText   string        `json:"original_text"`
-	ProcessedText  string        `json:"processed_text"`
-	TotalDetections int          `json:"total_detections"`
-	Detections     []PIIDetection `json:"detections"`
+	OriginalText    string        `json:"original_text"`
+	ProcessedText   string        `json:"processed_text"`
+	TotalDetections int           `json:"total_detections"`
+	Detections      []PIIDetection `json:"detections"`
 }
 
-// PIIDetection PII检测结果
+// PIIDetection PII检测结果（兼容结构）
 type PIIDetection struct {
 	Type      string  `json:"type"`
 	Original  string  `json:"original"`
@@ -424,48 +35,124 @@ type PIIDetection struct {
 	Confidence float64 `json:"confidence"`
 }
 
-// EncryptData 加密数据
+// NewPIIDetector 创建PII检测器（兼容接口）
+// 注意：此函数为了向后兼容而保留，建议使用NewNLPPIIDetector
+func NewPIIDetector() *PIIDetector {
+	return &PIIDetector{
+		nlpDetector: NewNLPPIIDetector(),
+	}
+}
+
+// DetectAndReplace 检测并替换PII信息（兼容接口）
+func (d *PIIDetector) DetectAndReplace(text string) (string, PIIReport) {
+	// 使用新的NLP检测器，置信度阈值设为0.6
+	processedText, entities := d.nlpDetector.DetectAndReplace(text, 0.6)
+
+	// 转换新的实体格式到旧的检测格式
+	detections := make([]PIIDetection, 0, len(entities))
+	for _, entity := range entities {
+		detection := PIIDetection{
+			Type:      string(entity.Type),
+			Original:  entity.Text,
+			Replaced:  entity.Replaced,
+			StartPos:  entity.StartPos,
+			EndPos:    entity.EndPos,
+			Confidence: entity.Score,
+		}
+		detections = append(detections, detection)
+	}
+
+	report := PIIReport{
+		OriginalText:    text,
+		ProcessedText:   processedText,
+		TotalDetections: len(detections),
+		Detections:      detections,
+	}
+
+	return processedText, report
+}
+
+// GetReplacementMap 获取替换映射（兼容接口）
+func (d *PIIDetector) GetReplacementMap() map[string]string {
+	return d.nlpDetector.GetReplacementMap()
+}
+
+// ClearReplacementMap 清空替换映射（兼容接口）
+func (d *PIIDetector) ClearReplacementMap() {
+	// 新的NLP检测器没有这个方法，我们可以重新创建
+	d.nlpDetector = NewNLPPIIDetector()
+}
+
+// GetStatistics 获取统计信息（兼容接口）
+func (d *PIIDetector) GetStatistics(text string) map[string]interface{} {
+	stats := d.nlpDetector.GetStatistics(text)
+
+	// 为向后兼容，确保返回的统计信息包含旧的字段
+	if _, exists := stats["total_detections"]; !exists {
+		if total, ok := stats["total_entities"].(int); ok {
+			stats["total_detections"] = total
+		}
+	}
+
+	return stats
+}
+
+// SetConfidenceThreshold 设置置信度阈值（新增方法，用于兼容）
+func (d *PIIDetector) SetConfidenceThreshold(threshold float64) {
+	// 新的NLP检测器允许在调用时指定阈值，这里为了兼容提供一个方法
+	// 实际使用时，阈值会在DetectAndReplace中指定
+}
+
+// GetConfidenceThreshold 获取当前置信度阈值（新增方法，用于兼容）
+func (d *PIIDetector) GetConfidenceThreshold() float64 {
+	// 返回默认阈值
+	return 0.6
+}
+
+// ==================== 加密相关功能 ====================
+// 以下是与PII检测无关的加密功能，保留在原文件中
+
+// EncryptData 使用AES加密数据
 func EncryptData(plaintext []byte, key string) ([]byte, error) {
-	// 使用SHA256生成32字节的密钥
+	// 生成32字节的密钥
 	keyBytes := sha256.Sum256([]byte(key))
 
 	block, err := aes.NewCipher(keyBytes[:])
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
+		return nil, err
 	}
 
-	// 创建GCM模式的AEAD
+	// 创建GCM模式的加密器
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create GCM: %w", err)
+		return nil, err
 	}
 
 	// 生成随机nonce
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, fmt.Errorf("failed to generate nonce: %w", err)
+		return nil, err
 	}
 
 	// 加密数据
 	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
-
 	return ciphertext, nil
 }
 
-// DecryptData 解密数据
+// DecryptData 使用AES解密数据
 func DecryptData(ciphertext []byte, key string) ([]byte, error) {
-	// 使用SHA256生成32字节的密钥
+	// 生成32字节的密钥
 	keyBytes := sha256.Sum256([]byte(key))
 
 	block, err := aes.NewCipher(keyBytes[:])
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cipher: %w", err)
+		return nil, err
 	}
 
-	// 创建GCM模式的AEAD
+	// 创建GCM模式的解密器
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create GCM: %w", err)
+		return nil, err
 	}
 
 	nonceSize := gcm.NonceSize()
@@ -473,19 +160,16 @@ func DecryptData(ciphertext []byte, key string) ([]byte, error) {
 		return nil, fmt.Errorf("ciphertext too short")
 	}
 
-	// 分离nonce和实际密文
-	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-
-	// 解密数据
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
+	nonce, ciphertext_bytes := ciphertext[:nonceSize], ciphertext[nonceSize:]
+	plaintext, err := gcm.Open(nil, nonce, ciphertext_bytes, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt: %w", err)
+		return nil, err
 	}
 
 	return plaintext, nil
 }
 
-// EncryptToBase64 加密并转换为Base64
+// EncryptToBase64 加密数据并返回Base64编码
 func EncryptToBase64(plaintext string, key string) (string, error) {
 	ciphertext, err := EncryptData([]byte(plaintext), key)
 	if err != nil {
@@ -494,14 +178,14 @@ func EncryptToBase64(plaintext string, key string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
-// DecryptFromBase64 从Base64解密
+// DecryptFromBase64 从Base64编码解密数据
 func DecryptFromBase64(ciphertext string, key string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(ciphertext)
+	ciphertext_bytes, err := base64.StdEncoding.DecodeString(ciphertext)
 	if err != nil {
-		return "", fmt.Errorf("failed to decode base64: %w", err)
+		return "", err
 	}
 
-	plaintext, err := DecryptData(data, key)
+	plaintext, err := DecryptData(ciphertext_bytes, key)
 	if err != nil {
 		return "", err
 	}

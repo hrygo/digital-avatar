@@ -56,6 +56,46 @@ deps: ## 安装项目依赖
 	@cd $(FRONTEND_DIR) && npm install
 	@echo "✅ 依赖安装完成"
 
+setup-db: ## 设置数据库和创建表
+	@echo "🗄️ 设置数据库..."
+	@mkdir -p data
+	@if [ ! -f data/twin-os.db ]; then \
+		echo "📝 创建主数据库..."; \
+		touch data/twin-os.db; \
+	fi
+	@echo "🔧 创建微信相关数据表..."
+	@if [ -f $(BACKEND_DIR)/create_wechat_tables.sql ]; then \
+		sqlite3 data/twin-os.db < $(BACKEND_DIR)/create_wechat_tables.sql; \
+		echo "✅ 微信数据表创建完成"; \
+	else \
+		echo "⚠️ 微信表创建脚本不存在"; \
+	fi
+	@echo "✅ 数据库设置完成"
+
+setup-wechat: ## 配置微信数据库
+	@echo "🔧 配置微信数据库..."
+	@if [ -f $(BACKEND_DIR)/test-wechat.db ]; then \
+		echo "📱 发现测试微信数据库，正在配置..."; \
+		env -u http_proxy -u https_proxy -u all_proxy curl -X PUT http://localhost:1234/api/v1/settings -H "Content-Type: application/json" -d '{"wechat_db_path": "./backend/test-wechat.db"}' 2>/dev/null || echo "⚠️ 请确保后端服务正在运行"; \
+		echo "✅ 微信数据库配置完成"; \
+	else \
+		echo "📝 未找到微信数据库，请手动配置微信数据库路径"; \
+		echo "   使用方法: make setup-wechat-db-path DB_PATH=/path/to/wechat.db"; \
+	fi
+
+setup-wechat-db-path: ## 设置自定义微信数据库路径 (用法: make setup-wechat-db-path DB_PATH=/path/to/wechat.db)
+	@if [ -z "$(DB_PATH)" ]; then \
+		echo "❌ 请指定微信数据库路径: make setup-wechat-db-path DB_PATH=/path/to/wechat.db"; \
+		exit 1; \
+	fi
+	@echo "🔧 设置微信数据库路径: $(DB_PATH)"
+	@if [ -f "$(DB_PATH)" ]; then \
+		env -u http_proxy -u https_proxy -u all_proxy curl -X PUT http://localhost:1234/api/v1/settings -H "Content-Type: application/json" -d '{"wechat_db_path": "$(DB_PATH)"}' || echo "⚠️ 请确保后端服务正在运行"; \
+		echo "✅ 微信数据库路径设置完成"; \
+	else \
+		echo "❌ 微信数据库文件不存在: $(DB_PATH)"; \
+	fi
+
 build-server: ## 构建后端服务器
 	@echo "🔨 构建TwinOS服务器..."
 	@mkdir -p $(BUILD_DIR)
@@ -82,6 +122,27 @@ dev-web: ## 运行开发模式Web应用
 dev: ## 同时运行服务器和Web应用(开发模式)
 	@echo "🚀 启动TwinOS开发环境..."
 	@make -j2 dev-server dev-web
+
+restart: ## 重启开发环境
+	@echo "🔄 重启TwinOS开发环境..."
+	@echo "🛑 停止现有服务..."
+	@pkill -f "go run main.go" 2>/dev/null || true
+	@pkill -f "react-scripts start" 2>/dev/null || true
+	@sleep 2
+	@echo "🚀 重新启动服务..."
+	@make -j2 dev-server dev-web
+
+restart-server: ## 重启后端服务
+	@echo "🔄 重启后端服务..."
+	@pkill -f "go run main.go" 2>/dev/null || true
+	@sleep 1
+	@make dev-server
+
+restart-web: ## 重启前端服务
+	@echo "🔄 重启前端服务..."
+	@pkill -f "react-scripts start" 2>/dev/null || true
+	@sleep 1
+	@make dev-web
 
 server: build-server ## 运行生产模式服务器
 	@echo "🚀 启动TwinOS生产服务器..."
@@ -164,7 +225,8 @@ backup: ## 创建项目备份
 init: ## 初始化新项目环境
 	@echo "🎯 初始化TwinOS开发环境..."
 	@make deps
-	@mkdir -p data logs backups
+	@make setup-db
+	@mkdir -p logs backups
 	@cp $(BACKEND_DIR)/.env.example $(BACKEND_DIR)/.env 2>/dev/null || true
 	@echo "✅ 开发环境初始化完成"
 	@echo ""

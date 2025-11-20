@@ -143,15 +143,30 @@ func (c *DeepSeekClient) ExtractTodos(messages []string) ([]TodoItem, error) {
 		return nil, fmt.Errorf("no response generated")
 	}
 
-	// 解析JSON响应
-	var todos []TodoItem
-	err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &todos)
+	// 提取并解析JSON响应
+	jsonContent := c.extractJSON(response.Choices[0].Message.Content)
+	
+	// 定义响应结构（包含todos和summary）
+	type TodoResponse struct {
+		Todos []TodoItem `json:"todos"`
+	}
+	var todoResp TodoResponse
+	
+	err = json.Unmarshal([]byte(jsonContent), &todoResp)
 	if err != nil {
+		// 尝试直接解析为数组（兼容性）
+		var todos []TodoItem
+		err2 := json.Unmarshal([]byte(jsonContent), &todos)
+		if err2 == nil {
+			return todos, nil
+		}
+		
 		// 如果JSON解析失败，尝试手动解析
+		logger.Warn("⚠️ JSON unmarshal failed, trying manual parsing: " + err.Error())
 		return c.parseTodosManually(response.Choices[0].Message.Content)
 	}
 
-	return todos, nil
+	return todoResp.Todos, nil
 }
 
 // AnalyzeConnections 分析人际关系
@@ -187,16 +202,27 @@ func (c *DeepSeekClient) AnalyzeConnections(messages []string, contacts []string
 		return nil, fmt.Errorf("no response generated")
 	}
 
-	// 解析JSON响应
-	var connections []ConnectionAnalysis
-	err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &connections)
+	// 提取并解析JSON响应
+	jsonContent := c.extractJSON(response.Choices[0].Message.Content)
+
+	type ConnectionResponse struct {
+		Connections []ConnectionAnalysis `json:"connections"`
+	}
+	var connResp ConnectionResponse
+
+	err = json.Unmarshal([]byte(jsonContent), &connResp)
 	if err != nil {
-		// 如果JSON解析失败，返回空结果
+		// 兼容直接返回数组的情况
+		var conns []ConnectionAnalysis
+		if err2 := json.Unmarshal([]byte(jsonContent), &conns); err2 == nil {
+			return conns, nil
+		}
+		
 		logger.Warn("⚠️ Failed to parse connection analysis JSON: " + err.Error())
 		return []ConnectionAnalysis{}, nil
 	}
 
-	return connections, nil
+	return connResp.Connections, nil
 }
 
 // chat 执行聊天请求
@@ -241,73 +267,53 @@ func (c *DeepSeekClient) chat(request ChatRequest) (*ChatResponse, error) {
 
 // buildBriefingPrompt 构建简报生成Prompt
 func (c *DeepSeekClient) buildBriefingPrompt(messages []string) string {
-	// 预处理消息：按时间排序和去重
-	processedMessages := c.preprocessMessages(messages, 50)
+	// 预处理消息：去重
+	processedMessages := c.preprocessMessages(messages, 100)
+	// 截断消息：防止超过 Context Window (假设 4096 或 8192，这里保守设为 3000 字符)
+	processedMessages = c.truncateMessages(processedMessages, 3000)
 
-	currentTime := time.Now().Format("2006-01-02")
+	currentTime := time.Now().Format("2006-01-02 15:04")
+	weekday := time.Now().Weekday().String()
 
-	prompt := fmt.Sprintf(`你是TwinOS智能分析引擎的核心情报分析助手。今天是%s。
+	prompt := fmt.Sprintf(`你是TwinOS智能分析引擎的首席情报官。今天是 %s (%s)。
+你的任务是阅读用户的加密聊天记录，剔除噪音，提炼出对用户决策有价值的战略情报。
 
-请对以下聊天消息进行深度分析，生成一份高质量的情报简报。
+## 核心原则
+1. **结论先行**：不要复述聊天记录，直接给出分析结论。
+2. **识别风险**：敏锐地发现潜在的冲突、延期、误解风险。
+3. **行动导向**：所有的洞察都必须转化为可执行的建议。
+4. **隐私意识**：消息中的人名已被脱敏为 [姓名X]、[公司Y]，请直接使用代号引用，不要尝试猜测真实姓名。
 
-## 分析要求：
+## 分析维度
+- **🔴 紧急 (Urgent)**: 需要立即处理的危机、即将到期的Deadline。
+- **🟡 重要 (Important)**: 关键项目的进展、重要合作机会、人脉维系。
+- **🔵 关注 (Watch)**: 值得注意的市场动态、潜在趋势。
 
-### 1. 信息筛选标准
-- **战略级信息**：影响重大决策、业务方向的关键信息
-- **时效性信息**：今日新增、即将到期的时间敏感信息
-- **关系性信息**：重要人脉互动、合作机会、潜在风险
-- **决策性信息**：需要用户做出判断或行动的事项
+## 输出格式 (Markdown)
 
-### 2. 内容优先级
-**P0级（紧急重要）**：截止日期临近、高风险事项、重大机遇
-**P1级（重要）**：重要会议、关键决策、关系维护
-**P2级（一般）**：常规进展、一般信息
+# 每日情报简报
 
-### 3. 输出结构
-使用Markdown格式，包含：
-- 📊 **数据概览**：消息统计、活跃度分析
-- 🚨 **重要提醒**：P0级紧急事项
-- 💡 **关键洞察**：AI发现的隐藏模式和趋势
-- 📋 **行动建议**：具体可执行的建议
-- 👥 **人脉动态**：重要关系变化
+### 🚨 紧急警报 (P0)
+> *无紧急事项则显示"今日无紧急风险"*
+- [截止时间] **事项标题**: 核心内容与风险点。
 
-## 聊天消息数据：
-`, currentTime)
+### 📋 决策待办 (Action Items)
+- [ ] **待办1**: 对应上下文及建议行动。
+- [ ] **待办2**: ...
+
+### 💡 深度洞察 (Insights)
+- **项目/业务**: 分析关键项目的健康度。
+- **人脉/情绪**: [姓名X] 似乎对某事有顾虑... / [公司Y] 表现出合作意向...
+
+### 📊 数据概览
+- 消息量: %d 条 (仅供参考)
+
+## 聊天记录片段 (最新的在最后):
+`, currentTime, weekday, len(processedMessages))
 
 	for i, msg := range processedMessages {
 		prompt += fmt.Sprintf("[%d] %s\n", i+1, msg)
 	}
-
-	prompt += fmt.Sprintf(`
-
-## 输出格式示例：
-
-# 今日情报简报 - %s
-
-## 📊 数据概览
-- 处理消息：%d 条
-- 活跃时段：[分析得出]
-- 关键人物：[识别出的重要联系人]
-
-## 🚨 重要提醒 (P0)
-- [紧急事项1，包含具体时间要求]
-- [紧急事项2]
-
-## 💡 关键洞察
-- [AI发现的趋势或模式]
-- [潜在机会或风险预警]
-
-## 📋 行动建议
-- [具体建议1，可执行]
-- [具体建议2，可执行]
-
-## 👥 人脉动态
-- [重要关系变化1]
-- [重要关系变化2]
-
----
-*由 TwinOS AI 引擎生成 | 置信度：[评估]*
-`, currentTime, len(processedMessages))
 
 	return prompt
 }
@@ -489,6 +495,21 @@ func (c *DeepSeekClient) buildConnectionPrompt(messages []string, contacts []str
 	return prompt
 }
 
+// extractJSON 从响应中提取JSON字符串
+func (c *DeepSeekClient) extractJSON(content string) string {
+	// 移除Markdown代码块标记
+	content = strings.TrimSpace(content)
+	if strings.HasPrefix(content, "```json") {
+		content = content[7:]
+	} else if strings.HasPrefix(content, "```") {
+		content = content[3:]
+	}
+	if strings.HasSuffix(content, "```") {
+		content = content[:len(content)-3]
+	}
+	return strings.TrimSpace(content)
+}
+
 // parseTodosManually 手动解析待办事项
 func (c *DeepSeekClient) parseTodosManually(content string) ([]TodoItem, error) {
 	// 简单的手动解析逻辑
@@ -515,6 +536,29 @@ func (c *DeepSeekClient) preprocessMessages(messages []string, maxCount int) []s
 	}
 
 	return processed
+}
+
+// truncateMessages 截断消息以适应Token限制
+func (c *DeepSeekClient) truncateMessages(messages []string, maxTokens int) []string {
+	var truncated []string
+	currentTokens := 0
+	// 预估Token：平均1个汉字=2个Token，1个英文单词=1.3个Token。
+	// 保守估计，按字符数直接作为Token数的参考（中文偏多）。
+	// System Prompt 和 Template 大约占 500 Tokens。
+	limit := maxTokens - 500
+
+	// 优先保留最新的消息
+	for i := 0; i < len(messages); i++ {
+		msg := messages[i]
+		estimatedTokens := len(msg) // 粗略估算
+		if currentTokens+estimatedTokens > limit {
+			break
+		}
+		truncated = append(truncated, msg)
+		currentTokens += estimatedTokens
+	}
+
+	return truncated
 }
 
 // highlightTimeKeywords 高亮时间关键词

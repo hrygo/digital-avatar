@@ -10,7 +10,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 	"twin-os/backend/pkg/logger"
 )
 
@@ -74,7 +74,7 @@ func (r *Reader) Close() error {
 }
 
 // GetMessages 获取消息列表
-func (r *Reader) GetMessages(limit int, offset int) ([]*model.Message, error) {
+func (r *Reader) GetMessages(limit int, offset int) ([]*models.Message, error) {
 	if !r.isOpened {
 		return nil, fmt.Errorf("database not opened")
 	}
@@ -97,9 +97,9 @@ func (r *Reader) GetMessages(limit int, offset int) ([]*model.Message, error) {
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		msg := &model.Message{}
+		msg := &models.Message{}
 		var createTime int64
 
 		err := rows.Scan(
@@ -126,7 +126,7 @@ func (r *Reader) GetMessages(limit int, offset int) ([]*model.Message, error) {
 }
 
 // GetMessagesByTimeRange 按时间范围获取消息
-func (r *Reader) GetMessagesByTimeRange(startTime, endTime time.Time) ([]*model.Message, error) {
+func (r *Reader) GetMessagesByTimeRange(startTime, endTime time.Time) ([]*models.Message, error) {
 	if !r.isOpened {
 		return nil, fmt.Errorf("database not opened")
 	}
@@ -152,9 +152,9 @@ func (r *Reader) GetMessagesByTimeRange(startTime, endTime time.Time) ([]*model.
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		msg := &model.Message{}
+		msg := &models.Message{}
 		var createTime int64
 
 		err := rows.Scan(
@@ -180,7 +180,7 @@ func (r *Reader) GetMessagesByTimeRange(startTime, endTime time.Time) ([]*model.
 }
 
 // GetContacts 获取联系人列表
-func (r *Reader) GetContacts() ([]*model.Contact, error) {
+func (r *Reader) GetContacts() ([]*models.Contact, error) {
 	if !r.isOpened {
 		return nil, fmt.Errorf("database not opened")
 	}
@@ -202,9 +202,9 @@ func (r *Reader) GetContacts() ([]*model.Contact, error) {
 	}
 	defer rows.Close()
 
-	var contacts []*model.Contact
+	var contacts []*models.Contact
 	for rows.Next() {
-		contact := &model.Contact{}
+		contact := &models.Contact{}
 
 		err := rows.Scan(
 			&contact.UserName,
@@ -232,7 +232,7 @@ func (r *Reader) GetContacts() ([]*model.Contact, error) {
 }
 
 // GetChatRooms 获取群聊列表
-func (r *Reader) GetChatRooms() ([]*model.Contact, error) {
+func (r *Reader) GetChatRooms() ([]*models.Contact, error) {
 	if !r.isOpened {
 		return nil, fmt.Errorf("database not opened")
 	}
@@ -254,9 +254,9 @@ func (r *Reader) GetChatRooms() ([]*model.Contact, error) {
 	}
 	defer rows.Close()
 
-	var chatRooms []*model.Contact
+	var chatRooms []*models.Contact
 	for rows.Next() {
-		contact := &model.Contact{}
+		contact := &models.Contact{}
 
 		err := rows.Scan(
 			&contact.UserName,
