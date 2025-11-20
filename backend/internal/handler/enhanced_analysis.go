@@ -5,16 +5,16 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // EnhancedAnalysisHandler 增强分析处理器
 type EnhancedAnalysisHandler struct {
-	service *service.EnhancedAnalysisService
+	service *services.EnhancedAnalysisService
 }
 
 // NewEnhancedAnalysisHandler 创建增强分析处理器
-func NewEnhancedAnalysisHandler(service *service.EnhancedAnalysisService) *EnhancedAnalysisHandler {
+func NewEnhancedAnalysisHandler(service *services.EnhancedAnalysisService) *EnhancedAnalysisHandler {
 	return &EnhancedAnalysisHandler{service: service}
 }
 
@@ -24,13 +24,13 @@ func NewEnhancedAnalysisHandler(service *service.EnhancedAnalysisService) *Enhan
 // @Tags AI Analysis
 // @Accept json
 // @Produce json
-// @Param request body service.MessageAnalysisRequest true "消息分析请求"
-// @Success 200 {object} service.MessageAnalysisResponse "分析结果"
+// @Param request body services.MessageAnalysisRequest true "消息分析请求"
+// @Success 200 {object} services.MessageAnalysisResponse "分析结果"
 // @Failure 400 {object} map[string]string "请求参数错误"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/message [post]
 func (h *EnhancedAnalysisHandler) AnalyzeMessage(c *gin.Context) {
-	var req service.MessageAnalysisRequest
+	var req services.MessageAnalysisRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format: " + err.Error(),
@@ -61,7 +61,7 @@ func (h *EnhancedAnalysisHandler) AnalyzeMessage(c *gin.Context) {
 // @Param userId query string false "用户ID"
 // @Param timeRange query string false "时间范围 (1h, 24h, 7d)"
 // @Param limit query int false "消息数量限制" default(100)
-// @Success 200 {object} service.ConversationAnalysisResponse "分析结果"
+// @Success 200 {object} services.ConversationAnalysisResponse "分析结果"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/conversation [get]
 func (h *EnhancedAnalysisHandler) AnalyzeConversation(c *gin.Context) {
@@ -96,7 +96,7 @@ func (h *EnhancedAnalysisHandler) AnalyzeConversation(c *gin.Context) {
 // @Produce json
 // @Param userId query string false "用户ID"
 // @Param timeRange query string false "时间范围 (1h, 24h, 7d, 30d)" default(24h)
-// @Success 200 {object} service.EmotionTrendResponse "情感趋势结果"
+// @Success 200 {object} services.EmotionTrendResponse "情感趋势结果"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/emotion/trend [get]
 func (h *EnhancedAnalysisHandler) GetEmotionTrend(c *gin.Context) {
@@ -125,7 +125,7 @@ func (h *EnhancedAnalysisHandler) GetEmotionTrend(c *gin.Context) {
 // @Produce json
 // @Param userId query string false "用户ID"
 // @Param timeRange query string false "时间范围 (1h, 24h, 7d, 30d)" default(24h)
-// @Success 200 {object} service.TopicAnalysisResponse "主题分析结果"
+// @Success 200 {object} services.TopicAnalysisResponse "主题分析结果"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/topics [get]
 func (h *EnhancedAnalysisHandler) GetTopicAnalysis(c *gin.Context) {
@@ -154,7 +154,7 @@ func (h *EnhancedAnalysisHandler) GetTopicAnalysis(c *gin.Context) {
 // @Produce json
 // @Param userId query string false "用户ID"
 // @Param timeRange query string false "时间范围 (1h, 24h, 7d, 30d)" default(24h)
-// @Success 200 {object} service.IntentDistributionResponse "意图分布结果"
+// @Success 200 {object} services.IntentDistributionResponse "意图分布结果"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/intents [get]
 func (h *EnhancedAnalysisHandler) GetIntentDistribution(c *gin.Context) {
@@ -183,7 +183,7 @@ func (h *EnhancedAnalysisHandler) GetIntentDistribution(c *gin.Context) {
 // @Produce json
 // @Param userId query string false "用户ID"
 // @Param timeRange query string false "时间范围 (1h, 24h, 7d, 30d)" default(24h)
-// @Success 200 {object} service.ConversationSummaryResponse "对话摘要结果"
+// @Success 200 {object} services.ConversationSummaryResponse "对话摘要结果"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/summary [get]
 func (h *EnhancedAnalysisHandler) GetConversationSummary(c *gin.Context) {
@@ -210,13 +210,13 @@ func (h *EnhancedAnalysisHandler) GetConversationSummary(c *gin.Context) {
 // @Tags AI Analysis
 // @Accept json
 // @Produce json
-// @Param request body service.BatchAnalysisRequest true "批量分析请求"
-// @Success 200 {object} service.BatchAnalysisResponse "批量分析结果"
+// @Param request body services.BatchAnalysisRequest true "批量分析请求"
+// @Success 200 {object} services.BatchAnalysisResponse "批量分析结果"
 // @Failure 400 {object} map[string]string "请求参数错误"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/batch [post]
 func (h *EnhancedAnalysisHandler) BatchAnalyzeMessages(c *gin.Context) {
-	var req service.BatchAnalysisRequest
+	var req services.BatchAnalysisRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format: " + err.Error(),
@@ -244,7 +244,7 @@ func (h *EnhancedAnalysisHandler) BatchAnalyzeMessages(c *gin.Context) {
 // @Tags AI Analysis
 // @Accept json
 // @Produce json
-// @Success 200 {object} service.AnalysisStatusResponse "分析状态结果"
+// @Success 200 {object} services.AnalysisStatusResponse "分析状态结果"
 // @Router /api/v1/analysis/status [get]
 func (h *EnhancedAnalysisHandler) GetAnalysisStatus(c *gin.Context) {
 	result, err := h.service.GetAnalysisStatus()
@@ -267,13 +267,13 @@ func (h *EnhancedAnalysisHandler) GetAnalysisStatus(c *gin.Context) {
 // @Tags AI Analysis
 // @Accept json
 // @Produce json
-// @Param request body service.AnalysisConfigRequest true "分析配置请求"
+// @Param request body services.AnalysisConfigRequest true "分析配置请求"
 // @Success 200 {object} map[string]string "配置成功"
 // @Failure 400 {object} map[string]string "请求参数错误"
 // @Failure 500 {object} map[string]string "服务器内部错误"
 // @Router /api/v1/analysis/config [put]
 func (h *EnhancedAnalysisHandler) ConfigureAnalysis(c *gin.Context) {
-	var req service.AnalysisConfigRequest
+	var req services.AnalysisConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid request format: " + err.Error(),

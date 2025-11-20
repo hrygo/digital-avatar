@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // WeChatHandler 微信处理器
 type WeChatHandler struct {
-	service *service.WeChatService
+	service *services.WeChatService
 }
 
 // NewWeChatHandler 创建微信处理器
-func NewWeChatHandler(service *service.WeChatService) *WeChatHandler {
+func NewWeChatHandler(service *services.WeChatService) *WeChatHandler {
 	return &WeChatHandler{service: service}
 }
 

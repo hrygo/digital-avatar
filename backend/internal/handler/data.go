@@ -5,16 +5,16 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // DataHandler 数据处理器
 type DataHandler struct {
-	service *service.DataService
+	service *services.DataService
 }
 
 // NewDataHandler 创建数据处理器
-func NewDataHandler(service *service.DataService) *DataHandler {
+func NewDataHandler(service *services.DataService) *DataHandler {
 	return &DataHandler{service: service}
 }
 

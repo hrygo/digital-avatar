@@ -136,23 +136,23 @@ func (s *WeChatServiceV2) GetWeChatStatus() (*WeChatStatus, error) {
 	}
 
 	// 统计会话数量
-	err = s.db.QueryRow("SELECT COUNT(*) FROM wechat_chats").Scan(&status.ChatCount)
+	var chatCount int64
+	err = s.db.QueryRow("SELECT COUNT(*) FROM wechat_chats").Scan(&chatCount)
+	status.ContactCount = int(chatCount) // 临时使用ContactCount字段存储聊天数量
 	if err != nil && err != sql.ErrNoRows {
 		return nil, fmt.Errorf("统计会话数量失败: %w", err)
 	}
 
 	// 获取最后同步记录
 	var lastSyncTime sql.NullInt64
-	var lastSyncStatus sql.NullString
-	err = s.db.QueryRow("SELECT start_time, status FROM wechat_sync_records ORDER BY created_at DESC LIMIT 1").
-		Scan(&lastSyncTime, &lastSyncStatus)
+	err = s.db.QueryRow("SELECT start_time FROM wechat_sync_records ORDER BY created_at DESC LIMIT 1").
+		Scan(&lastSyncTime)
 	if err == nil {
-		status.LastSyncTime = lastSyncTime.Int64
-		status.LastSyncStatus = lastSyncStatus.String
+		status.LastSync = time.Unix(lastSyncTime.Int64, 0)
 	}
 
 	// 检查是否有微信数据
-	status.Connected = status.MessageCount > 0 || status.ContactCount > 0
+	status.IsConnected = status.MessageCount != nil && *status.MessageCount > 0
 
 	return &status, nil
 }
@@ -682,15 +682,6 @@ type MessageStatistics struct {
 	ByDay         map[string]int64 `json:"by_day"`
 }
 
-// WeChatStatus 微信数据状态
-type WeChatStatus struct {
-	Connected       bool   `json:"connected"`
-	MessageCount    int64  `json:"message_count"`
-	ContactCount    int64  `json:"contact_count"`
-	ChatCount       int64  `json:"chat_count"`
-	LastSyncTime    int64  `json:"last_sync_time"`
-	LastSyncStatus  string `json:"last_sync_status"`
-}
 
 // Sync 同步微信数据
 func (s *WeChatServiceV2) Sync(dbPath string, mode string) (*models.WeChatSyncRecord, error) {

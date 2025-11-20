@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // AnalysisHandler 分析处理器
 type AnalysisHandler struct {
-	service *service.AnalysisService
+	service *services.AnalysisService
 }
 
 // NewAnalysisHandler 创建分析处理器
-func NewAnalysisHandler(service *service.AnalysisService) *AnalysisHandler {
+func NewAnalysisHandler(service *services.AnalysisService) *AnalysisHandler {
 	return &AnalysisHandler{service: service}
 }
 

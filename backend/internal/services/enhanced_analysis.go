@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"twin-os/backend/internal/config"
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 	"twin-os/backend/internal/repository"
 	"twin-os/backend/pkg/ai"
 	"twin-os/backend/pkg/logger"
@@ -249,8 +249,8 @@ func (s *EnhancedAnalysisService) AnalyzeConversation(userID, timeRange string, 
 		}, nil
 	}
 
-	// 转换为model.Message slice
-	messages := make([]model.Message, len(messagePtrs))
+	// 转换为models.Message slice
+	messages := make([]models.Message, len(messagePtrs))
 	for i, msgPtr := range messagePtrs {
 		messages[i] = *msgPtr
 	}
@@ -319,8 +319,8 @@ func (s *EnhancedAnalysisService) GetTopicAnalysis(userID, timeRange string) (*T
 		}, nil
 	}
 
-	// 转换为model.Message slice
-	messages := make([]model.Message, len(messagePtrs))
+	// 转换为models.Message slice
+	messages := make([]models.Message, len(messagePtrs))
 	for i, msgPtr := range messagePtrs {
 		messages[i] = *msgPtr
 	}
@@ -368,8 +368,8 @@ func (s *EnhancedAnalysisService) GetIntentDistribution(userID, timeRange string
 		return nil, fmt.Errorf("failed to get messages: %w", err)
 	}
 
-	// 转换为model.Message slice
-	messages := make([]model.Message, len(messagePtrs))
+	// 转换为models.Message slice
+	messages := make([]models.Message, len(messagePtrs))
 	for i, msgPtr := range messagePtrs {
 		messages[i] = *msgPtr
 	}
@@ -500,7 +500,7 @@ func (s *EnhancedAnalysisService) parseTimeRange(timeRange string) (time.Duratio
 }
 
 // convertToConversationMessages 转换消息格式
-func (s *EnhancedAnalysisService) convertToConversationMessages(messages []model.Message) []ai.ConversationMessage {
+func (s *EnhancedAnalysisService) convertToConversationMessages(messages []models.Message) []ai.ConversationMessage {
 	result := make([]ai.ConversationMessage, len(messages))
 	for i, msg := range messages {
 		result[i] = ai.ConversationMessage{
@@ -516,7 +516,7 @@ func (s *EnhancedAnalysisService) convertToConversationMessages(messages []model
 
 
 // calculateTimeRange 计算时间范围
-func (s *EnhancedAnalysisService) calculateTimeRange(messages []model.Message) TimeRangeResponse {
+func (s *EnhancedAnalysisService) calculateTimeRange(messages []models.Message) TimeRangeResponse {
 	if len(messages) == 0 {
 		return TimeRangeResponse{
 			Start: time.Now(),

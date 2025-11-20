@@ -110,7 +110,7 @@ export interface MessageStatistics {
 }
 
 class WeChatService {
-  private baseURL = '/api/v1/wechat';
+  private baseURL = 'http://localhost:1234/api/v1/wechat';
 
   // 连接微信数据源
   async connect(request: ImportRequest): Promise<ImportResponse> {

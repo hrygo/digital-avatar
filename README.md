@@ -1,5 +1,11 @@
 # Digital Avatar - 智能决策副驾系统
 
+> **⚠️ ARCHIVED PROJECT / 项目已归档**
+>
+> Due to technical limitations in accessing the WeChat database (the core data source for v0.4.0), this project's development has been suspended as of Nov 20, 2025. Please see [ARCHIVE_NOTE.md](ARCHIVE_NOTE.md) for details.
+>
+> 由于无法真实读取微信数据库（v0.4.0的核心数据源），本项目于2025年11月20日暂停开发并归档。详情请参阅 [ARCHIVE_NOTE.md](ARCHIVE_NOTE.md)。
+
 <div align="center">
 
 ![Digital Avatar Logo](https://via.placeholder.com/200x80/000000/FFFFFF?text=Digital+Avatar)
@@ -102,12 +108,13 @@ npm run dev
 - 完整的智能仪表板系统
 - 高级Markdown渲染引擎
 
-**v0.4.0** - 🚧 微信数据集成版 (开发中)
+**v0.4.0** - ❌ 微信数据集成版 (已取消)
+- 🛑由于无法读取真实微信数据库，该方向已终止
 - 真实的微信聊天记录读取和分析
 - 隐私安全增强，本地化数据处理
 - 实时同步机制和智能脱敏保护
 
-**v0.5.0** - 📅 多平台支持版 (规划中)
+**v0.5.0** - 📅 多平台支持版 (暂停)
 - QQ数据集成支持
 - 企业微信数据支持
 - 其他社交平台集成评估

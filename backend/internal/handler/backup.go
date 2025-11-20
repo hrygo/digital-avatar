@@ -8,16 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"twin-os/backend/pkg/backup"
 	"twin-os/backend/pkg/logger"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 )
 
 // BackupHandler 备份处理器
 type BackupHandler struct {
-	backupService *service.BackupService
+	backupService *services.BackupService
 }
 
 // NewBackupHandler 创建备份处理器
-func NewBackupHandler(backupService *service.BackupService) *BackupHandler {
+func NewBackupHandler(backupService *services.BackupService) *BackupHandler {
 	return &BackupHandler{
 		backupService: backupService,
 	}
@@ -29,13 +29,13 @@ func NewBackupHandler(backupService *service.BackupService) *BackupHandler {
 // @Tags backup
 // @Accept json
 // @Produce json
-// @Param request body service.CreateBackupRequest true "创建备份请求"
-// @Success 200 {object} service.CreateBackupResponse
+// @Param request body services.CreateBackupRequest true "创建备份请求"
+// @Success 200 {object} services.CreateBackupResponse
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/v1/backup/create [post]
 func (h *BackupHandler) CreateBackup(c *gin.Context) {
-	var req service.CreateBackupRequest
+	var req services.CreateBackupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("❌ Invalid backup request: " + err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -202,7 +202,7 @@ func (h *BackupHandler) GetBackup(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "备份ID"
-// @Param request body service.RestoreBackupRequest false "恢复选项"
+// @Param request body services.RestoreBackupRequest false "恢复选项"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -217,7 +217,7 @@ func (h *BackupHandler) RestoreBackup(c *gin.Context) {
 		return
 	}
 
-	var req service.RestoreBackupRequest
+	var req services.RestoreBackupRequest
 	req.BackupID = backupID
 
 	// 可选地解析请求体以获取密码等选项
@@ -278,7 +278,7 @@ func (h *BackupHandler) DeleteBackup(c *gin.Context) {
 		return
 	}
 
-	req := service.DeleteBackupRequest{BackupID: backupID}
+	req := services.DeleteBackupRequest{BackupID: backupID}
 
 	logger.Info("🗑️ Deleting backup: " + backupID)
 	if err := h.backupService.DeleteBackup(&req); err != nil {
@@ -330,13 +330,13 @@ func (h *BackupHandler) GetBackupStats(c *gin.Context) {
 // @Tags backup
 // @Accept json
 // @Produce json
-// @Param request body service.ScheduleBackupRequest true "备份计划配置"
+// @Param request body services.ScheduleBackupRequest true "备份计划配置"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/v1/backup/schedule [post]
 func (h *BackupHandler) ScheduleBackup(c *gin.Context) {
-	var req service.ScheduleBackupRequest
+	var req services.ScheduleBackupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("❌ Invalid schedule request: " + err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -401,7 +401,7 @@ func (h *BackupHandler) isValidInterval(interval string) bool {
 // @Accept json
 // @Produce json
 // @Param id path string true "备份ID"
-// @Param request body service.ExportBackupRequest true "导出配置"
+// @Param request body services.ExportBackupRequest true "导出配置"
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -416,7 +416,7 @@ func (h *BackupHandler) ExportBackup(c *gin.Context) {
 		return
 	}
 
-	var req service.ExportBackupRequest
+	var req services.ExportBackupRequest
 	req.BackupID = backupID
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -466,13 +466,13 @@ func (h *BackupHandler) ExportBackup(c *gin.Context) {
 // @Tags backup
 // @Accept json
 // @Produce json
-// @Param request body service.ImportBackupRequest true "导入配置"
+// @Param request body services.ImportBackupRequest true "导入配置"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /api/v1/backup/import [post]
 func (h *BackupHandler) ImportBackup(c *gin.Context) {
-	var req service.ImportBackupRequest
+	var req services.ImportBackupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("❌ Invalid import request: " + err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{

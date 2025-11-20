@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 )
 
 // ContactRepository 联系人仓储
@@ -20,7 +20,7 @@ func NewContactRepository(db *sql.DB) *ContactRepository {
 }
 
 // CreateOrUpdate 创建或更新联系人 - v0.3.0性能优化
-func (r *ContactRepository) CreateOrUpdate(ctx context.Context, contact *model.Contact) error {
+func (r *ContactRepository) CreateOrUpdate(ctx context.Context, contact *models.Contact) error {
 	query := `
 		INSERT OR REPLACE INTO contacts (
 			user_name, nick_name, remark, type, updated_at
@@ -43,7 +43,7 @@ func (r *ContactRepository) CreateOrUpdate(ctx context.Context, contact *model.C
 }
 
 // GetAll 获取所有联系人
-func (r *ContactRepository) GetAll() ([]*model.Contact, error) {
+func (r *ContactRepository) GetAll() ([]*models.Contact, error) {
 	query := `
 		SELECT id, user_name, nick_name, remark, type, created_at, updated_at
 		FROM contacts
@@ -56,9 +56,9 @@ func (r *ContactRepository) GetAll() ([]*model.Contact, error) {
 	}
 	defer rows.Close()
 
-	var contacts []*model.Contact
+	var contacts []*models.Contact
 	for rows.Next() {
-		contact := &model.Contact{}
+		contact := &models.Contact{}
 
 		err := rows.Scan(
 			&contact.ID,
@@ -81,7 +81,7 @@ func (r *ContactRepository) GetAll() ([]*model.Contact, error) {
 }
 
 // GetByUserName 根据用户名获取联系人
-func (r *ContactRepository) GetByUserName(userName string) (*model.Contact, error) {
+func (r *ContactRepository) GetByUserName(userName string) (*models.Contact, error) {
 	query := `
 		SELECT id, user_name, nick_name, remark, type, created_at, updated_at
 		FROM contacts
@@ -89,7 +89,7 @@ func (r *ContactRepository) GetByUserName(userName string) (*model.Contact, erro
 	`
 
 	row := r.db.QueryRow(query, userName)
-	contact := &model.Contact{}
+	contact := &models.Contact{}
 
 	err := row.Scan(
 		&contact.ID,

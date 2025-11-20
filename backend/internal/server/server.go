@@ -16,7 +16,7 @@ import (
 	"twin-os/backend/internal/config"
 	"twin-os/backend/internal/handler"
 	"twin-os/backend/internal/repository"
-	"twin-os/backend/internal/service"
+	"twin-os/backend/internal/services"
 	"twin-os/backend/pkg/cache"
 	"twin-os/backend/pkg/database"
 	"twin-os/backend/pkg/logger"
@@ -37,8 +37,8 @@ type Server struct {
 	router       *gin.Engine
 	httpServer   *http.Server
 	handlers     *handler.Handler
-	services     *service.Service
 	repositories *repository.Repository
+	services     *services.Service
 	cacheManager *cache.CacheManager
 
 	// v0.3.0 性能优化相关
@@ -55,10 +55,11 @@ func New(cfg *config.Config) *Server {
 	repos := repository.New(db)
 
 	// 初始化服务层
-	srvs := service.New(cfg, repos)
+	// 初始化服务聚合
+	svc := services.New(cfg, repos)
 
 	// 初始化处理器层
-	hdlrs := handler.New(srvs)
+	hdlrs := handler.New(svc)
 
 	// 初始化缓存管理器
 	cacheMgr := cache.NewCacheManager()
@@ -70,8 +71,8 @@ func New(cfg *config.Config) *Server {
 		config:        cfg,
 		router:        router,
 		handlers:      hdlrs,
-		services:      srvs,
 		repositories:  repos,
+		services:      svc,
 		cacheManager:  cacheMgr,
 		// v0.3.0 性能优化初始化
 		apiStats:      &APIStats{},
@@ -106,6 +107,15 @@ func (s *Server) Start() error {
 	}()
 
 	logger.Info("✅ TwinOS Backend started successfully")
+
+	// 启动自动同步服务 (v0.4.0)
+	go func() {
+		// 延迟启动，确保系统完全启动
+		time.Sleep(time.Second * 5)
+		if err := s.services.AutoSync.StartOnStartup(); err != nil {
+			logger.Warn("⚠️ 自动同步启动失败: " + err.Error())
+		}
+	}()
 
 	// 等待中断信号来优雅地关闭服务器
 	return s.gracefulShutdown()
@@ -276,6 +286,16 @@ func setupRouter(cfg *config.Config, h *handler.Handler, cacheMgr *cache.CacheMa
 
 		// 微信状态和数据查询 - 缓存状态查询
 		api.GET("/wechat/status", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.Status)
+
+		// 实时同步相关 v0.4.0 - 准实时同步API
+		api.POST("/sync/start", h.RealtimeSync.StartSync)
+		api.POST("/sync/stop", h.RealtimeSync.StopSync)
+		api.GET("/sync/status", h.RealtimeSync.GetSyncStatus)
+		api.POST("/sync/manual", h.RealtimeSync.TriggerManualSync)
+		api.GET("/sync/config", h.RealtimeSync.GetConfig)
+		api.PUT("/sync/config", h.RealtimeSync.UpdateConfig)
+		api.GET("/sync/detect-wechat", h.RealtimeSync.DetectWeChatDB)
+		api.GET("/sync/history", h.RealtimeSync.GetSyncHistory)
 
 		// 微信数据CRUD操作 - 缓存数据查询
 		api.GET("/wechat/messages", cache.CacheMiddleware(apiCache, shortCacheConfig), h.WeChat.GetMessages)

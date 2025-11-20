@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"twin-os/backend/internal/config"

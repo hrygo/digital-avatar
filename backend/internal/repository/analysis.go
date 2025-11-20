@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 )
 
 // AnalysisRepository 分析结果仓储
@@ -18,7 +18,7 @@ func NewAnalysisRepository(db *sql.DB) *AnalysisRepository {
 }
 
 // Create 创建分析结果
-func (r *AnalysisRepository) Create(analysis *model.AnalysisResult) error {
+func (r *AnalysisRepository) Create(analysis *models.AnalysisResult) error {
 	query := `
 		INSERT INTO analysis_results (
 			type, message_ids, content, metadata, confidence, created_at, processed_at
@@ -49,7 +49,7 @@ func (r *AnalysisRepository) Create(analysis *model.AnalysisResult) error {
 }
 
 // GetByType 根据类型获取最新的分析结果
-func (r *AnalysisRepository) GetByType(analysisType string) (*model.AnalysisResult, error) {
+func (r *AnalysisRepository) GetByType(analysisType string) (*models.AnalysisResult, error) {
 	query := `
 		SELECT id, type, message_ids, content, metadata, confidence, created_at, processed_at
 		FROM analysis_results
@@ -59,7 +59,7 @@ func (r *AnalysisRepository) GetByType(analysisType string) (*model.AnalysisResu
 	`
 
 	row := r.db.QueryRow(query, analysisType)
-	analysis := &model.AnalysisResult{}
+	analysis := &models.AnalysisResult{}
 
 	err := row.Scan(
 		&analysis.ID,

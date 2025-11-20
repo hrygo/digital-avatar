@@ -7,6 +7,7 @@ require (
 	github.com/hrygo/log v1.2.4
 	github.com/joho/godotenv v1.5.1
 	github.com/mattn/go-sqlite3 v1.14.32
+	github.com/rjeczalik/notify v0.9.3
 	github.com/sirupsen/logrus v1.9.3
 	gorm.io/gorm v1.31.1
 )

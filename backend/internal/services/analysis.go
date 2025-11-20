@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"twin-os/backend/internal/config"
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 	"twin-os/backend/internal/repository"
 	"twin-os/backend/pkg/ai"
 	"twin-os/backend/pkg/crypto"
@@ -78,7 +78,7 @@ func (s *AnalysisService) GenerateBriefing() (*BriefingResult, error) {
 	}
 
 	// 保存分析结果
-	analysis := &model.AnalysisResult{
+	analysis := &models.AnalysisResult{
 		Type:       "briefing",
 		MessageIDs: s.extractMessageIDs(messages),
 		Content:    briefing,
@@ -120,7 +120,7 @@ func (s *AnalysisService) ExtractTodos() (*TodoResult, error) {
 
 	// 准备消息内容
 	var messageTexts []string
-	messageMap := make(map[string]*model.Message)
+	messageMap := make(map[string]*models.Message)
 	for _, msg := range messages {
 		if msg.Content != "" {
 			maskedContent, _ := s.maskPII(msg.Content)
@@ -150,7 +150,7 @@ func (s *AnalysisService) ExtractTodos() (*TodoResult, error) {
 	// 保存分析结果
 	if len(result.Todos) > 0 {
 		todosJSON, _ := json.Marshal(result.Todos)
-		analysis := &model.AnalysisResult{
+		analysis := &models.AnalysisResult{
 			Type:       "todo",
 			MessageIDs: s.extractMessageIDs(messages),
 			Content:    string(todosJSON),
@@ -193,7 +193,7 @@ func (s *AnalysisService) AnalyzeConnections() (*ConnectionResult, error) {
 	contacts, err := s.repository.Contact.GetAll()
 	if err != nil {
 		logger.Warn("⚠️ Failed to get contacts: " + err.Error())
-		contacts = []*model.Contact{}
+		contacts = []*models.Contact{}
 	}
 
 	// 准备联系人姓名列表
@@ -233,7 +233,7 @@ func (s *AnalysisService) AnalyzeConnections() (*ConnectionResult, error) {
 	// 保存分析结果
 	if len(result.Connections) > 0 {
 		connectionsJSON, _ := json.Marshal(connections)
-		analysis := &model.AnalysisResult{
+		analysis := &models.AnalysisResult{
 			Type:       "connection",
 			MessageIDs: s.extractMessageIDs(messages),
 			Content:    string(connectionsJSON),
@@ -258,7 +258,7 @@ func (s *AnalysisService) maskPII(text string) (string, crypto.PIIReport) {
 }
 
 // extractMessageIDs 提取消息ID列表
-func (s *AnalysisService) extractMessageIDs(messages []*model.Message) string {
+func (s *AnalysisService) extractMessageIDs(messages []*models.Message) string {
 	var ids []string
 	for _, msg := range messages {
 		ids = append(ids, msg.MessageID)
@@ -268,7 +268,7 @@ func (s *AnalysisService) extractMessageIDs(messages []*model.Message) string {
 }
 
 // generateSimpleBriefing 生成简化版简报
-func (s *AnalysisService) generateSimpleBriefing(messages []*model.Message) string {
+func (s *AnalysisService) generateSimpleBriefing(messages []*models.Message) string {
 	briefing := "# 今日情报简报\n\n"
 
 	// 统计信息
@@ -290,7 +290,7 @@ func (s *AnalysisService) generateSimpleBriefing(messages []*model.Message) stri
 }
 
 // extractTodosByKeywords 通过关键词提取待办
-func (s *AnalysisService) extractTodosByKeywords(messages []*model.Message) []ai.TodoItem {
+func (s *AnalysisService) extractTodosByKeywords(messages []*models.Message) []ai.TodoItem {
 	var todos []ai.TodoItem
 
 	// 待办关键词
@@ -332,7 +332,7 @@ func (s *AnalysisService) extractTodosByKeywords(messages []*model.Message) []ai
 }
 
 // analyzeConnectionsByKeywords 通过关键词分析人脉
-func (s *AnalysisService) analyzeConnectionsByKeywords(messages []*model.Message, contacts []*model.Contact) []ai.ConnectionAnalysis {
+func (s *AnalysisService) analyzeConnectionsByKeywords(messages []*models.Message, contacts []*models.Contact) []ai.ConnectionAnalysis {
 	connections := make(map[string]*ai.ConnectionAnalysis)
 
 	// 分析消息中的人名提及
@@ -376,7 +376,7 @@ func (s *AnalysisService) analyzeConnectionsByKeywords(messages []*model.Message
 }
 
 // filterAndEnhanceTodos 过滤和增强待办项
-func (s *AnalysisService) filterAndEnhanceTodos(todos []ai.TodoItem, messageMap map[string]*model.Message) []ai.TodoItem {
+func (s *AnalysisService) filterAndEnhanceTodos(todos []ai.TodoItem, messageMap map[string]*models.Message) []ai.TodoItem {
 	var filtered []ai.TodoItem
 
 	for _, todo := range todos {

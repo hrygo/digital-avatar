@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 )
 
 // MessageRepository 消息仓储
@@ -131,7 +131,7 @@ func (r *MessageRepository) initPreparedStatements() {
 }
 
 // CreateOrUpdate 创建或更新消息 - v0.3.0性能优化
-func (r *MessageRepository) CreateOrUpdate(ctx context.Context, message *model.Message) error {
+func (r *MessageRepository) CreateOrUpdate(ctx context.Context, message *models.Message) error {
 	start := time.Now()
 	defer func() {
 		r.trackPerformance(ctx, "CreateOrUpdate", start)
@@ -163,14 +163,14 @@ func (r *MessageRepository) trackPerformance(ctx context.Context, operation stri
 }
 
 // GetByID 根据ID获取消息 - v0.3.0性能优化
-func (r *MessageRepository) GetByID(ctx context.Context, id int64) (*model.Message, error) {
+func (r *MessageRepository) GetByID(ctx context.Context, id int64) (*models.Message, error) {
 	start := time.Now()
 	defer func() {
 		r.trackPerformance(ctx, "GetByID", start)
 	}()
 
 	row := r.stmtGetByID.QueryRowContext(ctx, id)
-	message := &model.Message{}
+	message := &models.Message{}
 
 	err := row.Scan(
 		&message.ID,
@@ -194,7 +194,7 @@ func (r *MessageRepository) GetByID(ctx context.Context, id int64) (*model.Messa
 }
 
 // GetByMessageID 根据消息ID获取消息
-func (r *MessageRepository) GetByMessageID(messageID string) (*model.Message, error) {
+func (r *MessageRepository) GetByMessageID(messageID string) (*models.Message, error) {
 	query := `
 		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
 		FROM messages
@@ -202,7 +202,7 @@ func (r *MessageRepository) GetByMessageID(messageID string) (*model.Message, er
 	`
 
 	row := r.db.QueryRow(query, messageID)
-	message := &model.Message{}
+	message := &models.Message{}
 
 	err := row.Scan(
 		&message.ID,
@@ -226,7 +226,7 @@ func (r *MessageRepository) GetByMessageID(messageID string) (*model.Message, er
 }
 
 // GetList 获取消息列表
-func (r *MessageRepository) GetList(limit, offset int) ([]*model.Message, error) {
+func (r *MessageRepository) GetList(limit, offset int) ([]*models.Message, error) {
 	query := `
 		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
 		FROM messages
@@ -240,9 +240,9 @@ func (r *MessageRepository) GetList(limit, offset int) ([]*model.Message, error)
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		message := &model.Message{}
+		message := &models.Message{}
 		
 		err := rows.Scan(
 			&message.ID,
@@ -266,7 +266,7 @@ func (r *MessageRepository) GetList(limit, offset int) ([]*model.Message, error)
 }
 
 // GetByTalker 根据聊天对象获取消息
-func (r *MessageRepository) GetByTalker(talkerID string, limit int) ([]*model.Message, error) {
+func (r *MessageRepository) GetByTalker(talkerID string, limit int) ([]*models.Message, error) {
 	query := `
 		SELECT id, message_id, talker_id, type, content, timestamp, created_at, updated_at
 		FROM messages
@@ -281,9 +281,9 @@ func (r *MessageRepository) GetByTalker(talkerID string, limit int) ([]*model.Me
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		message := &model.Message{}
+		message := &models.Message{}
 		
 		err := rows.Scan(
 			&message.ID,
@@ -307,7 +307,7 @@ func (r *MessageRepository) GetByTalker(talkerID string, limit int) ([]*model.Me
 }
 
 // GetRecentMessages 获取最近的消息
-func (r *MessageRepository) GetRecentMessages(duration time.Duration, limit int) ([]*model.Message, error) {
+func (r *MessageRepository) GetRecentMessages(duration time.Duration, limit int) ([]*models.Message, error) {
 	since := time.Now().Add(-duration).Unix()
 
 	query := `
@@ -325,9 +325,9 @@ func (r *MessageRepository) GetRecentMessages(duration time.Duration, limit int)
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		message := &model.Message{}
+		message := &models.Message{}
 		
 		err := rows.Scan(
 			&message.ID,
@@ -351,7 +351,7 @@ func (r *MessageRepository) GetRecentMessages(duration time.Duration, limit int)
 }
 
 // Search 搜索消息
-func (r *MessageRepository) Search(query string, limit int) ([]*model.Message, error) {
+func (r *MessageRepository) Search(query string, limit int) ([]*models.Message, error) {
 	searchQuery := "%" + query + "%"
 
 	sql := `
@@ -368,9 +368,9 @@ func (r *MessageRepository) Search(query string, limit int) ([]*model.Message, e
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		message := &model.Message{}
+		message := &models.Message{}
 		
 		err := rows.Scan(
 			&message.ID,
@@ -485,9 +485,9 @@ func (r *MessageRepository) GetTalkers() ([]string, error) {
 }
 
 // GetMessagesByIDs 根据消息ID列表获取消息
-func (r *MessageRepository) GetMessagesByIDs(messageIDs []string) ([]*model.Message, error) {
+func (r *MessageRepository) GetMessagesByIDs(messageIDs []string) ([]*models.Message, error) {
 	if len(messageIDs) == 0 {
-		return []*model.Message{}, nil
+		return []*models.Message{}, nil
 	}
 
 	// 构建IN查询
@@ -511,9 +511,9 @@ func (r *MessageRepository) GetMessagesByIDs(messageIDs []string) ([]*model.Mess
 	}
 	defer rows.Close()
 
-	var messages []*model.Message
+	var messages []*models.Message
 	for rows.Next() {
-		message := &model.Message{}
+		message := &models.Message{}
 		
 		err := rows.Scan(
 			&message.ID,

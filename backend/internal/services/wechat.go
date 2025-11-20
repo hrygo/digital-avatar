@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"twin-os/backend/internal/config"
-	"twin-os/backend/internal/model"
+	"twin-os/backend/internal/models"
 	"twin-os/backend/internal/repository"
 	"twin-os/backend/pkg/crypto"
 	"twin-os/backend/pkg/logger"
@@ -206,27 +206,27 @@ func (s *WeChatService) syncContacts(ctx context.Context) error {
 }
 
 // GetMessages 获取消息列表
-func (s *WeChatService) GetMessages(limit, offset int) ([]*model.Message, error) {
+func (s *WeChatService) GetMessages(limit, offset int) ([]*models.Message, error) {
 	return s.repository.Message.GetList(limit, offset)
 }
 
 // GetMessagesByTalker 根据聊天对象获取消息
-func (s *WeChatService) GetMessagesByTalker(talkerID string, limit int) ([]*model.Message, error) {
+func (s *WeChatService) GetMessagesByTalker(talkerID string, limit int) ([]*models.Message, error) {
 	return s.repository.Message.GetByTalker(talkerID, limit)
 }
 
 // SearchMessages 搜索消息
-func (s *WeChatService) SearchMessages(query string, limit int) ([]*model.Message, error) {
+func (s *WeChatService) SearchMessages(query string, limit int) ([]*models.Message, error) {
 	return s.repository.Message.Search(query, limit)
 }
 
 // GetContacts 获取联系人列表
-func (s *WeChatService) GetContacts() ([]*model.Contact, error) {
+func (s *WeChatService) GetContacts() ([]*models.Contact, error) {
 	return s.repository.Contact.GetAll()
 }
 
 // GetContactByUserName 根据用户名获取联系人
-func (s *WeChatService) GetContactByUserName(userName string) (*model.Contact, error) {
+func (s *WeChatService) GetContactByUserName(userName string) (*models.Contact, error) {
 	return s.repository.Contact.GetByUserName(userName)
 }
 
